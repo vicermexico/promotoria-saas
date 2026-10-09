@@ -210,7 +210,7 @@ export function TareaDetalle() {
             )}
             {task.id_order && (
               <Button variant="outline" size="sm" onClick={() => navigate(`/detalle-pedido/${task.id_order}`)}>
-                <Receipt size={14} className="mr-1.5" /> Ver pedido
+                <Receipt size={14} className="mr-1.5" /> Ver orden de visita
               </Button>
             )}
             <Button variant="outline" onClick={() => navigate("/tareas")}>
@@ -240,7 +240,7 @@ export function TareaDetalle() {
 
               {task.order && (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: "var(--text-secondary)" }}>Pedido</span>
+                  <span className="text-sm" style={{ color: "var(--text-secondary)" }}>Orden de visita</span>
                   <button
                     className="font-semibold text-info hover:underline text-sm"
                     onClick={() => navigate(`/detalle-pedido/${task.id_order}`)}
@@ -345,7 +345,7 @@ export function TareaDetalle() {
                   <Ban size={18} className="text-destructive" />
                   <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>
                     Motivo de cancelación
-                    {task.vc_cancel_type === "negocio" && " (cierre de pedido)"}
+                    {task.vc_cancel_type === "negocio" && " (cierre de la orden)"}
                     {task.vc_cancel_type === "cliente" && " (por el cliente)"}
                   </h3>
                 </div>

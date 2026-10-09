@@ -110,6 +110,7 @@ export const updateFullRequest = async (
     rackImage?: File | null;
     url_rack_image?: string | null;
     b_preorder?: boolean;
+    preorder_date_mode?: string;
   }
 ): Promise<ApiResponse<any>> => {
   const token = useAuthStore.getState().token;
@@ -122,6 +123,9 @@ export const updateFullRequest = async (
   formData.append("products", JSON.stringify(payload.products));
   if (payload.b_preorder !== undefined) {
     formData.append("b_preorder", payload.b_preorder.toString());
+  }
+  if (payload.preorder_date_mode) {
+    formData.append("preorder_date_mode", payload.preorder_date_mode);
   }
 
   if (payload.rackImage) {

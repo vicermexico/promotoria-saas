@@ -297,7 +297,8 @@ function TabUsers({ cliente }: { cliente: ClientDTO | null }) {
 
   const nombreRef = useRef<HTMLInputElement>(null);
   const apellidosRef = useRef<HTMLInputElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
+  const celularRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const fetchUsers = async () => {
     if (!cliente?.id_client) return;
@@ -333,13 +334,19 @@ function TabUsers({ cliente }: { cliente: ClientDTO | null }) {
     setIsLoadingModal(true);
     try {
 
-      const response = await api.post<ApiResponse<CreateUserInCLientDetailDTO>>("/users/", {
-        name: nombreRef.current?.value || "",
-        lastname: apellidosRef.current?.value || "",
-        email: emailRef.current?.value || "",
-        password: "defaultPassword123",
-        i_rol: 2,
-        id_user_creator: user?.id_user || 0,
+      const name = (nombreRef.current?.value || "").trim();
+      const lastname = (apellidosRef.current?.value || "").trim();
+      const phone = (celularRef.current?.value || "").replace(/\D/g, "");
+      const password = passwordRef.current?.value || "";
+      if (!name || !lastname) { toast.error("Escribe el nombre y los apellidos"); return false; }
+      if (phone.length !== 10) { toast.error("El celular debe tener 10 dígitos"); return false; }
+      if (password.length < 6) { toast.error("La contraseña debe tener al menos 6 caracteres"); return false; }
+
+      const response = await api.post<ApiResponse<CreateUserInCLientDetailDTO>>("/users/super/client-user", {
+        name,
+        lastname,
+        phone,
+        password,
         id_client: cliente?.id_client || 0,
       });
 
@@ -374,7 +381,7 @@ function TabUsers({ cliente }: { cliente: ClientDTO | null }) {
         <ModalCustom
           buttonTitle="Agregar Usuario"
           dialogTitle="Agregar Nuevo Usuario"
-          dialogDescription="Complete el formulario para agregar un nuevo usuario al cliente."
+          dialogDescription="Entrará con su celular y esta contraseña temporal. Se le pedirá cambiarla en su primer acceso."
           isLoading={isLoadingModal}
           onSubmit={handleSaveUser}
           body={
@@ -388,8 +395,12 @@ function TabUsers({ cliente }: { cliente: ClientDTO | null }) {
                 <Input ref={apellidosRef} id="apellidos" name="apellidos" defaultValue="" />
               </div>
               <div className="grid gap-3">
-                <Label htmlFor="email">Correo electrónico</Label>
-                <Input ref={emailRef} type="email" id="email" name="email" defaultValue="" />
+                <Label htmlFor="celular">Celular (su usuario de acceso)</Label>
+                <Input ref={celularRef} type="tel" inputMode="numeric" maxLength={10} id="celular" name="celular" defaultValue="" placeholder="10 dígitos" />
+              </div>
+              <div className="grid gap-3">
+                <Label htmlFor="password">Contraseña temporal</Label>
+                <Input ref={passwordRef} type="text" id="password" name="password" defaultValue="" placeholder="Mínimo 6 caracteres" />
               </div>
             </div>
           }
@@ -442,7 +453,7 @@ function TabUsers({ cliente }: { cliente: ClientDTO | null }) {
                     </td>
                     <td className="px-4 py-3">
                       <span className="px-2.5 py-1 bg-muted text-foreground text-sm rounded-md">
-                        {ROL_LABELS[u.i_rol] ?? `Rol ${u.i_rol}`}
+                        {(u as any).id_user_creator && users.some((x) => x.id_user === (u as any).id_user_creator) ? "Empleado" : "Dueño"}
                       </span>
                     </td>
                     <td className="px-4 py-3">

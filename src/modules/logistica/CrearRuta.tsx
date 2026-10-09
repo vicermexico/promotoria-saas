@@ -17,6 +17,8 @@ import {
 } from "@/Fetch/routeTemplates"
 import { getRouteSchedules, deleteRouteSchedule, RouteScheduleDTO, describeSchedule } from "@/Fetch/routeSchedules"
 import { StoreMarker } from "@/modules/mapa/components/StoreMarker"
+import { api, ApiResponse } from "@/lib"
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components"
 
 const MAP_CONTAINER_STYLE = { width: '100%', height: '100%' }
 const DEFAULT_CENTER = { lat: 25.7460, lng: -100.2792 }
@@ -37,7 +39,10 @@ export default function CrearRuta() {
   const [editing, setEditing] = useState<RouteTemplateDTO | null>(null)
   const [name, setName] = useState("")
   const [selectedStoreIds, setSelectedStoreIds] = useState<number[]>([])
+  const [storeTurnos, setStoreTurnos] = useState<Record<number, 'MAÑANA' | 'TARDE'>>({})
   const [storeSearch, setStoreSearch] = useState("")
+  const [misIds, setMisIds] = useState<Set<number>>(new Set())
+  const [mostrarTiendas, setMostrarTiendas] = useState<"todas" | "mias" | "nuevas">("todas")
   const [saving, setSaving] = useState(false)
 
   const [estimate, setEstimate] = useState<RouteSalesEstimateDTO | null>(null)
@@ -70,6 +75,12 @@ export default function CrearRuta() {
   }, [user?.id_client])
 
   useEffect(() => {
+    api.get<ApiResponse<{ id_store: number }[]>>("/stores/mine/list")
+      .then((r) => setMisIds(new Set((r.data ?? []).map((t) => t.id_store))))
+      .catch(() => {})
+  }, [user?.id_client])
+
+  useEffect(() => {
     if (!building || selectedStoreIds.length === 0) {
       setEstimate(null)
       return
@@ -88,6 +99,7 @@ export default function CrearRuta() {
     setEditing(null)
     setName("")
     setSelectedStoreIds([])
+    setStoreTurnos({})
     setStoreSearch("")
     setBuilding(true)
   }
@@ -96,17 +108,35 @@ export default function CrearRuta() {
     setEditing(t)
     setName(t.name)
     setSelectedStoreIds(t.stores.map((s) => s.id_store))
+    setStoreTurnos(Object.fromEntries(t.stores.map((s) => [s.id_store, (s.turno === 'TARDE' ? 'TARDE' : 'MAÑANA') as 'MAÑANA' | 'TARDE'])))
     setStoreSearch("")
     setBuilding(true)
   }
 
   const toggleStore = (id_store: number) => {
     setSelectedStoreIds((prev) => (prev.includes(id_store) ? prev.filter((s) => s !== id_store) : [...prev, id_store]))
+    setStoreTurnos((prev) => {
+      if (prev[id_store]) {
+        const next = { ...prev }
+        delete next[id_store]
+        return next
+      }
+      return { ...prev, [id_store]: 'MAÑANA' as const }
+    })
+  }
+
+  const setStoreTurno = (id_store: number, turno: 'MAÑANA' | 'TARDE') => {
+    setStoreTurnos((prev) => ({ ...prev, [id_store]: turno }))
   }
 
   const visibleStores = useMemo(
-    () => stores.filter((s) => s.name.toLowerCase().includes(storeSearch.toLowerCase())),
-    [stores, storeSearch]
+    () => stores.filter((s) => {
+      if (!s.name.toLowerCase().includes(storeSearch.toLowerCase())) return false
+      if (mostrarTiendas === "mias" && !misIds.has(s.id_store)) return false
+      if (mostrarTiendas === "nuevas" && misIds.has(s.id_store)) return false
+      return true
+    }),
+    [stores, storeSearch, mostrarTiendas, misIds]
   )
 
   const mapCenter = useMemo(() => {
@@ -128,7 +158,8 @@ export default function CrearRuta() {
     }
     setSaving(true)
     try {
-      const payload = { name: name.trim(), storeIds: selectedStoreIds }
+      const stores = selectedStoreIds.map((id_store) => ({ id_store, turno: storeTurnos[id_store] ?? ('MAÑANA' as const) }))
+      const payload = { name: name.trim(), stores }
       if (editing) {
         await updateRouteTemplate(editing.id_route_template, payload)
         toast.success("Ruta actualizada")
@@ -246,27 +277,63 @@ export default function CrearRuta() {
                   <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
                   <Input value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} placeholder="Buscar tienda..." className="pl-8" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">{selectedStoreIds.length} tienda{selectedStoreIds.length !== 1 ? "s" : ""} seleccionada{selectedStoreIds.length !== 1 ? "s" : ""}</p>
+                <div className="mt-2">
+                  <Select value={mostrarTiendas} onValueChange={(v) => setMostrarTiendas(v as "todas" | "mias" | "nuevas")}>
+                    <SelectTrigger><SelectValue placeholder="Mostrar" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas las tiendas de la app</SelectItem>
+                      <SelectItem value="mias">Solo mis tiendas</SelectItem>
+                      <SelectItem value="nuevas">Las que aún no tengo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {selectedStoreIds.length} tienda{selectedStoreIds.length !== 1 ? "s" : ""} seleccionada{selectedStoreIds.length !== 1 ? "s" : ""}
+                  {selectedStoreIds.length > 0 && (
+                    <> · {Object.values(storeTurnos).filter((t) => t === 'MAÑANA').length} mañana, {Object.values(storeTurnos).filter((t) => t === 'TARDE').length} tarde</>
+                  )}
+                </p>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
                 {visibleStores.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-6">No hay tiendas que coincidan.</p>
                 ) : (
-                  visibleStores.map((s) => (
+                  visibleStores.map((s) => {
+                    const selected = selectedStoreIds.includes(s.id_store)
+                    return (
                     <div
                       key={s.id_store}
                       onClick={() => toggleStore(s.id_store)}
                       className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
-                        selectedStoreIds.includes(s.id_store) ? "bg-info/10 border-info/30" : "bg-white border-border hover:border-input"
+                        selected ? "bg-info/10 border-info/30" : "bg-white border-border hover:border-input"
                       }`}
                     >
-                      <Checkbox checked={selectedStoreIds.includes(s.id_store)} className="pointer-events-none" />
+                      <Checkbox checked={selected} className="pointer-events-none" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{s.name}</p>
                         <p className="text-xs text-muted-foreground truncate">{s.municipio_name}, {s.state_name}</p>
                       </div>
+                      {selected && (
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => setStoreTurno(s.id_store, 'MAÑANA')}
+                            className={`px-2 py-1 rounded-md text-xs font-medium ${storeTurnos[s.id_store] !== 'TARDE' ? 'bg-warning text-white' : 'bg-muted text-muted-foreground'}`}
+                          >
+                            Mañana
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStoreTurno(s.id_store, 'TARDE')}
+                            className={`px-2 py-1 rounded-md text-xs font-medium ${storeTurnos[s.id_store] === 'TARDE' ? 'bg-info text-white' : 'bg-muted text-muted-foreground'}`}
+                          >
+                            Tarde
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
             </div>

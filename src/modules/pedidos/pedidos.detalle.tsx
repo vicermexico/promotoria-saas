@@ -227,7 +227,7 @@ export function PedidoDetalle() {
 
       XLSX.writeFile(wb, `Pedido_${String(order.id_order).padStart(4, "0")}.xlsx`)
     } catch {
-      toast.error("Error al exportar el pedido")
+      toast.error("Error al exportar la orden")
     } finally {
       setExporting(false)
     }
@@ -259,7 +259,7 @@ export function PedidoDetalle() {
       setPromotores(promotoresResult.status === "fulfilled" ? (promotoresResult.value.data || []) : [])
 
       if (orderResult.status === "rejected") {
-        toast.error("Error al cargar el pedido")
+        toast.error("Error al cargar la orden")
       }
     } finally {
       setLoading(false)
@@ -277,14 +277,14 @@ export function PedidoDetalle() {
     try {
       const resp = await api.patch<ApiResponse<OrderDTO>>(`/orders/${id}/close`)
       if (!resp.ok) {
-        toast.error(resp.message || "No se pudo cerrar el pedido")
+        toast.error(resp.message || "No se pudo cerrar la orden")
         return
       }
-      toast.success("Pedido cerrado")
+      toast.success("Orden cerrada")
       setCloseDialog(false)
       await fetchAll()
     } catch {
-      toast.error("Error al cerrar el pedido")
+      toast.error("Error al cerrar la orden")
     } finally {
       setClosing(false)
     }
@@ -338,7 +338,7 @@ export function PedidoDetalle() {
       <PageWrapper>
         <div className="flex items-center justify-center py-20 gap-3">
           <Loader2 size={24} className="animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Cargando pedido...</p>
+          <p className="text-sm text-muted-foreground">Cargando orden...</p>
         </div>
       </PageWrapper>
     )
@@ -348,7 +348,7 @@ export function PedidoDetalle() {
     return (
       <PageWrapper>
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <p className="text-sm text-muted-foreground">Pedido no encontrado.</p>
+          <p className="text-sm text-muted-foreground">Orden no encontrada.</p>
           <Button variant="outline" onClick={() => navigate("/pedidos")}>
             <ArrowLeft size={16} className="mr-2" /> Volver
           </Button>
@@ -387,7 +387,7 @@ export function PedidoDetalle() {
             )}
             {(isAdmin() || isSuperAdmin()) && order.id_status === 1 && (
               <Button variant="destructive" onClick={() => setCloseDialog(true)}>
-                <Lock size={16} className="mr-2" /> Cerrar pedido
+                <Lock size={16} className="mr-2" /> Cerrar orden
               </Button>
             )}
             <Button variant="outline" onClick={() => navigate("/pedidos")}>
@@ -404,7 +404,7 @@ export function PedidoDetalle() {
           <Card>
             <CardContent className="p-5 space-y-4">
               <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
-                Resumen del pedido
+                Resumen de la orden
               </h3>
 
               {/* Estado */}
@@ -670,7 +670,7 @@ export function PedidoDetalle() {
       <AlertDialog open={closeDialog} onOpenChange={(v) => !closing && setCloseDialog(v)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cerrar pedido</AlertDialogTitle>
+            <AlertDialogTitle>Cerrar orden</AlertDialogTitle>
             <AlertDialogDescription>
               Las tareas que estén en revisión se aprobarán automáticamente. Las que ya estén terminadas no se
               verán afectadas. Las que aún no se hayan contestado se cancelarán automáticamente con el motivo
@@ -685,7 +685,7 @@ export function PedidoDetalle() {
               disabled={closing}
             >
               {closing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Cerrar pedido
+              Cerrar orden
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

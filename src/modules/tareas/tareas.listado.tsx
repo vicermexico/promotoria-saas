@@ -175,7 +175,7 @@ export function TareasListado() {
     },
     {
       accessorKey: "id_order",
-      header: "Pedido",
+      header: "Orden de visita",
       cell: ({ row }) => (
         <button
           className="font-medium text-info hover:underline"
@@ -251,8 +251,8 @@ export function TareasListado() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Tareas"
-        subtitle="Seguimiento de tareas asignadas a los promotores"
+        title="Visitas"
+        subtitle="Seguimiento de visitas asignadas a los promotores"
         icon={CheckSquare2}
       />
 
@@ -291,7 +291,7 @@ export function TareasListado() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Pedido</label>
+          <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Orden de visita</label>
           <Select value={orderFilter} onValueChange={(v) => { setOrderFilter(v); resetToFirstPage() }}>
             <SelectTrigger className="w-44"><SelectValue placeholder="Todos" /></SelectTrigger>
             <SelectContent>

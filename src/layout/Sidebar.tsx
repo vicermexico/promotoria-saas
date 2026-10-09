@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Store, ChevronLeft, ChevronRight, HomeIcon, ClipboardList, ClipboardCheck, UsersRound, Users, Package, MessageCircleQuestion, Receipt, Banknote, UserCircle, Building2, CheckSquare2, BarChart3, HandCoins, CreditCard, UserPlus, Settings, Map, Truck, LucideIcon } from "lucide-react"
+import { Store, ChevronLeft, ChevronRight, HomeIcon, ClipboardList, ClipboardCheck, UsersRound, Users, Package, MessageCircleQuestion, Receipt, FileText, Banknote, UserCircle, Building2, CheckSquare2, BarChart3, HandCoins, CreditCard, UserPlus, Settings, Map, Truck, Clapperboard, HelpCircle, LucideIcon } from "lucide-react"
 
 
 import { cn } from "@/lib"
 import { useAuthStore } from "@/stores"
+import { puedeVer, permisosDe } from "@/lib/permisos"
 import { LogoutButton } from "@/components"
 
 
@@ -45,10 +46,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       items: [
         { route: "/", icon: HomeIcon, label: "Inicio", show: true },
         { route: "/solicitudes", icon: ClipboardList, label: "Solicitudes", show: isAdmin || isNegocio },
-        { route: "/pedidos", icon: Receipt, label: "Pedidos", show: isAdmin || isNegocio },
-        { route: "/tareas", icon: CheckSquare2, label: "Tareas", show: isAdmin || isNegocio },
+        { route: "/pedidos", icon: FileText, label: "Órdenes de visita", show: isAdmin || isNegocio },
+        { route: "/tareas", icon: CheckSquare2, label: "Visitas", show: isAdmin || isNegocio },
         { route: "/logistica", icon: Map, label: "Logística", show: isAdmin || isNegocio },
-        { route: "/mis-prepedidos", icon: ClipboardCheck, label: "Mis Prepedidos", show: isNegocio },
+        { route: "/mis-prepedidos", icon: ClipboardCheck, label: "Mis Pedidos", show: isNegocio },
         { route: "/choferes", icon: Truck, label: "Choferes", show: isNegocio },
       ],
     },
@@ -59,6 +60,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         { route: "/promotores", icon: Users, label: "Promotores", show: isAdmin },
         { route: "/productos", icon: Package, label: "Productos", show: isAdmin || isNegocio },
         { route: "/establecimientos", icon: Store, label: "Establecimientos", show: isAdmin },
+        { route: "/mis-establecimientos", icon: Store, label: "Mis establecimientos", show: isNegocio },
         { route: "/canales-venta", icon: CreditCard, label: "Canales de venta", show: isAdmin },
         { route: "/preguntas", icon: MessageCircleQuestion, label: "Preguntas", show: isAdmin },
       ],
@@ -66,7 +68,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     {
       label: "Reportes",
       items: [
-        { route: "/reportes/pedidos", icon: BarChart3, label: "Reporte de pedidos", show: isAdmin || isNegocio },
       ],
     },
     {
@@ -80,6 +81,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       label: "Sistema",
       items: [
         { route: "/configurar-app", icon: Settings, label: "Configurar app", show: isAdmin },
+        { route: "/videos-introduccion", icon: Clapperboard, label: "Videos de introducción", show: isAdmin },
+        { route: "/dudas-preguntas", icon: HelpCircle, label: "Dudas del promotor", show: isAdmin },
+        { route: "/dudas-cliente", icon: HelpCircle, label: "Dudas del cliente", show: isAdmin },
+        { route: "/equipo", icon: Users, label: "Equipo", show: isAdmin && permisosDe(user) === null },
       ],
     },
     {
@@ -125,7 +130,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       <nav className="flex flex-col gap-5">
         {sections.map((section) => {
           const visible = section.items.filter(
-            (item) => item.show && (!item.mobileOnly || isMobile),
+            (item) => item.show && puedeVer(user, item.route) && (!item.mobileOnly || isMobile),
           );
           if (visible.length === 0) return null;
 

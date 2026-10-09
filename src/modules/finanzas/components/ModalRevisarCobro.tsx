@@ -81,7 +81,7 @@ export function ModalRevisarCobro({ cobro, open, onClose, onSuccess }: Props) {
                 <span className="font-medium text-foreground">{detalle.vc_folio ?? `#${detalle.id}`}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Pedido</span>
+                <span className="text-muted-foreground">Orden de visita</span>
                 <span className="font-medium text-foreground">#{detalle.id_order}</span>
               </div>
               <div className="flex justify-between border-t border-border pt-2 mt-2">

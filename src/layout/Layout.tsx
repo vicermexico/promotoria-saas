@@ -1,9 +1,11 @@
 import { useState } from "react"
 import { Menu, X, LogOut, User } from "lucide-react"
-import { Outlet, useLocation, useNavigate } from "react-router-dom"
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom"
+import { puedeVer } from "@/lib/permisos"
 
 import { usePageTransition } from "@/lib/motion";
 import { Sidebar } from "./Sidebar"
+import { AsistenteCliente } from "@/components/asistente/AsistenteCliente"
 import { useAuthStore } from "@/stores"
 import { SidebarProvider, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, ThemeToggleHeader } from '@/components'
 import { useAuthCheck } from '@/hooks'
@@ -16,12 +18,15 @@ const ROUTE_LABELS: Record<string, string> = {
   "/productos": "Productos",
   "/producto": "Nuevo producto",
   "/establecimientos": "Establecimientos",
+  "/mis-establecimientos": "Mis establecimientos",
+  "/equipo": "Equipo",
+  "/dudas-cliente": "Dudas del cliente",
   "/establecimiento": "Nuevo establecimiento",
   "/preguntas": "Preguntas",
   "/solicitudes": "Solicitudes",
   "/crearSolicitud": "Nueva solicitud",
-  "/pedidos": "Pedidos",
-  "/crearPedido": "Nuevo pedido",
+  "/pedidos": "Órdenes de visita",
+  "/crearPedido": "Nueva orden de visita",
   "/finanzas": "Finanzas",
   "/finanzas/cobro-clientes": "Cobro a clientes",
   "/finanzas/pago-promotores": "Pago a promotores",
@@ -29,6 +34,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/finanzas/gestion-pagos": "Gestión de pagos",
   "/finanzas/gestion-gastos": "Gestión de gastos",
   "/configurar-app": "Configurar app",
+  "/videos-introduccion": "Videos de introducción",
   "/reportes/pedidos": "Reporte de pedidos",
   "/mi-negocio": "Mi Negocio",
   "/perfil": "Mi Perfil",
@@ -95,6 +101,7 @@ export function Layout() {
     <SidebarProvider>
       <div className="relative flex h-screen w-screen overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={handleCloseSidebar} />
+        {user?.i_rol === 2 && <AsistenteCliente />}
 
         {sidebarOpen && (
           <div
@@ -166,7 +173,7 @@ export function Layout() {
           {/* Main content */}
           <main className="flex-1 overflow-auto bg-background">
             <div ref={pageRef} className="min-h-full">
-              <Outlet />
+              {puedeVer(user, location.pathname) ? <Outlet /> : <Navigate to="/" replace />}
             </div>
           </main>
         </div>

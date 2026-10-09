@@ -21,6 +21,7 @@ export interface RouteStopDTO {
     id_stop: number
     id_store: number
     id_preorder: number
+    turno: 'MAÑANA' | 'TARDE'
     i_order: number
     i_status: number
     b_delivered: boolean | null
@@ -36,6 +37,10 @@ export interface RouteDTO {
     id_route: number
     id_driver: number
     route_date: string
+    manana_inicio: string | null
+    manana_fin: string | null
+    tarde_inicio: string | null
+    tarde_fin: string | null
     is_active: boolean
     is_finished: boolean
     dt_register: string
@@ -55,10 +60,28 @@ export const getPendingPreorders = (filters?: { date?: string; time?: 'MAÑANA' 
     return api.get<ApiResponse<PendingPreorderDTO[]>>(`/delivery-routes/pending-preorders${qs ? `?${qs}` : ''}`)
 }
 
-export const createRoute = (data: { id_driver: number; route_date: string; id_schedule?: number; id_route_template?: number; stops: { id_store: number; id_preorder?: number }[] }) =>
+export const createRoute = (data: {
+    id_driver: number
+    route_date: string
+    id_schedule?: number
+    id_route_template?: number
+    manana_inicio?: string | null
+    manana_fin?: string | null
+    tarde_inicio?: string | null
+    tarde_fin?: string | null
+    stops: { id_store: number; id_preorder?: number; turno?: 'MAÑANA' | 'TARDE' }[]
+}) =>
     api.post<ApiResponse<RouteDTO>>('/delivery-routes', data)
 
-export const updateRoute = (id_route: number, data: { id_driver: number; route_date: string; stops: { id_store: number; id_preorder?: number }[] }) =>
+export const updateRoute = (id_route: number, data: {
+    id_driver: number
+    route_date: string
+    manana_inicio?: string | null
+    manana_fin?: string | null
+    tarde_inicio?: string | null
+    tarde_fin?: string | null
+    stops: { id_store: number; id_preorder?: number; turno?: 'MAÑANA' | 'TARDE' }[]
+}) =>
     api.put<ApiResponse<RouteDTO>>(`/delivery-routes/${id_route}`, data)
 
 export const deleteRoute = (id_route: number) =>

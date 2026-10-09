@@ -101,7 +101,7 @@ export function PedidosList() {
     },
     {
       accessorKey: "id_order",
-      header: "# Pedido",
+      header: "# Orden",
       cell: ({ row }) => (
         <span className="font-bold text-foreground">
           #{String(row.original.id_order).padStart(4, "0")}
@@ -227,7 +227,7 @@ export function PedidosList() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Pedidos de Operación"
+        title="Órdenes de visita"
         subtitle="Órdenes generadas que contienen tareas para los promotores"
         icon={Receipt}
         actions={

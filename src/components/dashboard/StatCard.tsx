@@ -13,9 +13,10 @@ interface StatCardProps {
   };
   accent?: string;
   className?: string;
+  wrapTitle?: boolean;
 }
 
-export function StatCard({ title, value, icon: Icon, description, trend, accent, className }: StatCardProps) {
+export function StatCard({ title, value, icon: Icon, description, trend, accent, className, wrapTitle }: StatCardProps) {
   const isNumeric = typeof value === "number";
   const countRef = useCountUp<HTMLParagraphElement>(isNumeric ? value : 0);
 
@@ -34,7 +35,7 @@ export function StatCard({ title, value, icon: Icon, description, trend, accent,
       />
 
       <div className="flex items-center justify-between gap-3">
-        <p className="eyebrow truncate">{title}</p>
+        <p className={cn("eyebrow", wrapTitle ? "line-clamp-2 leading-tight" : "truncate")}>{title}</p>
         <Icon className="w-4 h-4 shrink-0 text-muted-foreground" strokeWidth={1.8} />
       </div>
 

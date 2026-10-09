@@ -48,6 +48,7 @@ export const EditarSolicitud = () => {
   const [imagenAnaquel, setImagenAnaquel] = useState<File | null>(null);
   const [previewAnaquel, setPreviewAnaquel] = useState<string | null>(null);
   const [prepedido, setPrepedido] = useState(false);
+  const [preorderDateMode, setPreorderDateMode] = useState<'ABIERTA' | 'CERRADA'>('ABIERTA');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export const EditarSolicitud = () => {
         setNombre(dataSol.vc_name);
         setSelectedClientId(dataSol.id_client || null);
         setPrepedido(Boolean(dataSol.b_preorder));
+        setPreorderDateMode(dataSol.preorder_date_mode === 'CERRADA' ? 'CERRADA' : 'ABIERTA');
 
         if (dataSol.url_rack_image) {
           setPreviewAnaquel(dataSol.url_rack_image);
@@ -219,6 +221,7 @@ export const EditarSolicitud = () => {
         rackImage: imagenAnaquel,
         url_rack_image: !imagenAnaquel ? previewAnaquel : null,
         b_preorder: prepedido,
+        preorder_date_mode: prepedido ? preorderDateMode : undefined,
       });
 
       if (respuesta.ok) {
@@ -376,22 +379,64 @@ export const EditarSolicitud = () => {
             </div>
 
             {/* Extra: Prepedido */}
-            <label className="flex items-start gap-3 p-4 rounded-xl border border-border cursor-pointer hover:border-ring transition-colors">
-              <input
-                type="checkbox"
-                checked={prepedido}
-                onChange={(e) => setPrepedido(e.target.checked)}
-                className="mt-1 h-4 w-4"
-              />
-              <div>
-                <p className="font-semibold text-foreground">Agregar Prepedido</p>
-                <p className="text-sm text-muted-foreground">
-                  Si el promotor detecta que a la tienda le faltan piezas contra el mínimo
-                  configurado, podrá levantar un pedido con el encargado y mandárselo por
-                  WhatsApp directamente desde la app.
-                </p>
-              </div>
-            </label>
+            <div className="rounded-xl border border-border overflow-hidden">
+              <label className="flex items-start gap-3 p-4 cursor-pointer hover:border-ring transition-colors">
+                <input
+                  type="checkbox"
+                  checked={prepedido}
+                  onChange={(e) => setPrepedido(e.target.checked)}
+                  className="mt-1 h-4 w-4"
+                />
+                <div>
+                  <p className="font-semibold text-foreground">Solicitar que el promotor levante pedido</p>
+                  <p className="text-sm text-muted-foreground">
+                    Si el promotor detecta que a la tienda le faltan piezas contra el mínimo
+                    configurado, podrá levantar un pedido con el encargado y mandárselo por
+                    WhatsApp directamente desde la app.
+                  </p>
+                </div>
+              </label>
+              {prepedido && (
+                <div className="px-4 pb-4 space-y-2">
+                  <label className="flex items-start gap-3 p-3 rounded-lg border border-border cursor-pointer hover:border-ring transition-colors">
+                    <input
+                      type="radio"
+                      name="preorderDateMode"
+                      checked={preorderDateMode === 'ABIERTA'}
+                      onChange={() => setPreorderDateMode('ABIERTA')}
+                      className="mt-1 h-4 w-4"
+                    />
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">Fecha abierta</p>
+                      <p className="text-xs text-muted-foreground">
+                        El encargado o dueño podrá elegir la fecha en la cual quiera que se le
+                        entregue su pedido, y si lo requiere por la mañana o por la tarde dicha
+                        entrega.
+                      </p>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 p-3 rounded-lg border border-border cursor-pointer hover:border-ring transition-colors">
+                    <input
+                      type="radio"
+                      name="preorderDateMode"
+                      checked={preorderDateMode === 'CERRADA'}
+                      onChange={() => setPreorderDateMode('CERRADA')}
+                      className="mt-1 h-4 w-4"
+                    />
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">Fecha cerrada</p>
+                      <p className="text-xs text-muted-foreground">
+                        El encargado o dueño se tendrá que recibir el pedido en el día y turno
+                        (mañana o tarde) que el Cliente asigne; dicha fecha y turno se
+                        asignarán conforme a las rutas establecidas por el cliente. En caso de
+                        que esa tienda no cuente con una ruta asignada, se le establecerá
+                        fecha abierta a ese cliente.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Productos a auditar */}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { GoogleMap } from '@react-google-maps/api'
-import { Loader2, MapPin, ChevronLeft, ListChecks, Route as RouteIcon } from 'lucide-react'
+import { Loader2, MapPin, ChevronLeft, ListChecks, Route as RouteIcon, Download, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { api, ApiResponse, useJsApiLoader, GOOGLE_MAPS_CONFIG } from '@/lib'
@@ -58,6 +58,7 @@ interface SelectedStop {
   id_preorder: number | null
   store_name: string
   semaphore: 'red' | 'yellow' | 'green' | null
+  turno: 'MAÑANA' | 'TARDE'
 }
 
 export default function Mapa() {
@@ -73,6 +74,14 @@ export default function Mapa() {
   const [canal, setCanal] = useState(FILTRO_TODOS)
   const [estado, setEstado] = useState(FILTRO_TODOS)
   const [municipio, setMunicipio] = useState(FILTRO_TODOS)
+  const [mostrarTiendas, setMostrarTiendas] = useState<'todas' | 'mias' | 'nuevas'>('todas')
+  const [misIds, setMisIds] = useState<Set<number>>(new Set())
+
+  useEffect(() => {
+    api.get<ApiResponse<{ id_store: number }[]>>('/stores/mine/list')
+      .then((r) => setMisIds(new Set((r.data ?? []).map((t) => t.id_store))))
+      .catch(() => {})
+  }, [user?.id_client])
 
   const [stores, setStores] = useState<MapStoreDTO[]>([])
   const [loading, setLoading] = useState(true)
@@ -132,6 +141,14 @@ export default function Mapa() {
   const [repeatAutomatically, setRepeatAutomatically] = useState(false)
   const [repeatIntervalWeeks, setRepeatIntervalWeeks] = useState('1')
   const [routeName, setRouteName] = useState('')
+  const [mananaInicio, setMananaInicio] = useState('10:00')
+  const [mananaFin, setMananaFin] = useState('13:00')
+  const [tardeInicio, setTardeInicio] = useState('14:00')
+  const [tardeFin, setTardeFin] = useState('18:00')
+  // En que turno se van metiendo las tiendas que se van seleccionando --
+  // asi el cliente primero marca todas las de la mañana, cambia a "Tarde"
+  // y marca las de la tarde, sin tener que corregir tienda por tienda.
+  const [assignTurno, setAssignTurno] = useState<'MAÑANA' | 'TARDE'>('MAÑANA')
 
   const routeDayName = useMemo(() => {
     if (!routeDate) return ''
@@ -187,6 +204,10 @@ export default function Mapa() {
     setRepeatAutomatically(false)
     setRepeatIntervalWeeks('1')
     setRouteName('')
+    setMananaInicio('10:00')
+    setMananaFin('13:00')
+    setTardeInicio('14:00')
+    setTardeFin('18:00')
     setShowRouteSetup(true)
   }
 
@@ -199,18 +220,20 @@ export default function Mapa() {
     setActiveFilter(null)
     setRouteSearch('')
     setRouteFilter('todas')
+    setAssignTurno('MAÑANA')
 
     if (attachTemplateId) {
       const template = routeTemplates.find((t) => String(t.id_route_template) === attachTemplateId)
       if (template) {
         const prefilled: SelectedStop[] = template.stores
-          .map((ts) => stores.find((s) => s.id_store === ts.id_store))
-          .filter((s): s is MapStoreDTO => !!s)
-          .map((s) => ({
+          .map((ts) => ({ ts, store: stores.find((s) => s.id_store === ts.id_store) }))
+          .filter((x): x is { ts: typeof template.stores[number]; store: MapStoreDTO } => !!x.store)
+          .map(({ ts, store: s }) => ({
             id_store: s.id_store,
             id_preorder: pendingByStore.get(s.id_store)?.[0]?.id_preorder ?? null,
             store_name: s.name,
             semaphore: s.semaphore ?? null,
+            turno: ts.turno === 'TARDE' ? 'TARDE' as const : 'MAÑANA' as const,
           }))
         setSelectedStops(prefilled)
         const faltantes = template.stores.length - prefilled.length
@@ -234,8 +257,86 @@ export default function Mapa() {
         id_preorder: pending?.[0]?.id_preorder ?? null,
         store_name: store.name,
         semaphore: store.semaphore ?? null,
+        turno: assignTurno,
       }]
     })
+  }
+
+  const setStopTurno = (id_store: number, turno: 'MAÑANA' | 'TARDE') => {
+    setSelectedStops((prev) => prev.map((s) => (s.id_store === id_store ? { ...s, turno } : s)))
+  }
+
+  // --- Exportar / importar la ruta por Excel ---
+  // Normaliza un nombre de tienda para comparar sin importar mayusculas,
+  // acentos o espacios de mas -- asi no importa como lo escriba Vic en el Excel.
+  const normalizarNombreTienda = (nombre: string) =>
+    nombre
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+
+  const handleExportarExcelRuta = async () => {
+    const XLSX = await import('xlsx')
+    const rows = [
+      { 'Nombre de tienda': 'Ejemplo: Oxxo Cedeco', 'Turno (MAÑANA o TARDE)': 'MAÑANA' },
+    ]
+    const sheet = XLSX.utils.json_to_sheet(rows)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Ruta')
+    XLSX.writeFile(workbook, 'formato_ruta.xlsx')
+    toast.success('Formato descargado. Borra el ejemplo, escribe el nombre de cada tienda y si es MAÑANA o TARDE, y vuelve a subirlo. No importa si usas mayúsculas o minúsculas en el nombre.')
+  }
+
+  const handleImportarExcelRuta = async (file: File) => {
+    try {
+      const XLSX = await import('xlsx')
+      const buffer = await file.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'array' })
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet)
+
+      const nuevos: SelectedStop[] = []
+      const noEncontrados: string[] = []
+      for (const row of rows) {
+        const nombre = String(row['Nombre de tienda'] ?? '').trim()
+        if (!nombre || nombre.toLowerCase().startsWith('ejemplo')) continue
+        const turnoRaw = String(row['Turno (MAÑANA o TARDE)'] ?? '').trim().toUpperCase()
+        if (!turnoRaw) continue
+        const turno: 'MAÑANA' | 'TARDE' = turnoRaw.startsWith('T') ? 'TARDE' : 'MAÑANA'
+        const nombreNormalizado = normalizarNombreTienda(nombre)
+        const match = stores.find((s) => normalizarNombreTienda(s.name) === nombreNormalizado)
+        if (!match) {
+          noEncontrados.push(nombre)
+          continue
+        }
+        const pending = pendingByStore.get(match.id_store)
+        nuevos.push({
+          id_store: match.id_store,
+          id_preorder: pending?.[0]?.id_preorder ?? null,
+          store_name: match.name,
+          semaphore: match.semaphore ?? null,
+          turno,
+        })
+      }
+
+      if (nuevos.length === 0) {
+        toast.error('No se encontró ninguna tienda con turno marcado en el archivo')
+        return
+      }
+
+      setSelectedStops((prev) => {
+        const idsNuevos = new Set(nuevos.map((n) => n.id_store))
+        return [...prev.filter((s) => !idsNuevos.has(s.id_store)), ...nuevos]
+      })
+      toast.success(`${nuevos.length} tienda(s) asignada(s) desde el Excel`)
+      if (noEncontrados.length > 0) {
+        toast.error(`No se encontró${noEncontrados.length === 1 ? '' : 'ron'}: ${noEncontrados.join(', ')}`)
+      }
+    } catch {
+      toast.error('Error al leer el archivo. Verifica que sea el mismo formato exportado.')
+    }
   }
 
   const cancelRouteBuilding = () => {
@@ -254,7 +355,7 @@ export default function Mapa() {
     }
     setSavingRoute(true)
     try {
-      const storeIds = selectedStops.map((s) => s.id_store)
+      const templateStores = selectedStops.map((s) => ({ id_store: s.id_store, turno: s.turno }))
       let id_route_template: number | undefined
       let id_schedule: number | undefined
 
@@ -264,10 +365,10 @@ export default function Mapa() {
       if (user?.id_client) {
         try {
           if (attachTemplateId) {
-            const updated = await updateRouteTemplate(Number(attachTemplateId), { name: routeName.trim(), storeIds })
+            const updated = await updateRouteTemplate(Number(attachTemplateId), { name: routeName.trim(), stores: templateStores })
             id_route_template = updated.data.id_route_template
           } else {
-            const created = await createRouteTemplate({ id_client: user.id_client, name: routeName.trim(), storeIds })
+            const created = await createRouteTemplate({ id_client: user.id_client, name: routeName.trim(), stores: templateStores })
             id_route_template = created.data.id_route_template
           }
         } catch {
@@ -298,7 +399,11 @@ export default function Mapa() {
         route_date: routeDate,
         id_schedule,
         id_route_template,
-        stops: selectedStops.map((s) => ({ id_store: s.id_store, id_preorder: s.id_preorder ?? undefined })),
+        manana_inicio: mananaInicio || null,
+        manana_fin: mananaFin || null,
+        tarde_inicio: tardeInicio || null,
+        tarde_fin: tardeFin || null,
+        stops: selectedStops.map((s) => ({ id_store: s.id_store, id_preorder: s.id_preorder ?? undefined, turno: s.turno })),
       })
 
       toast.success(id_schedule ? 'Ruta creada y programada para repetirse automáticamente' : 'Ruta creada y asignada al chofer')
@@ -379,8 +484,10 @@ export default function Mapa() {
   // filtro normal de abajo, para que el mapa y la lista muestren siempre
   // exactamente las mismas tiendas.
   const visibleStores = useMemo(() => {
+    const base = stores.filter((s) =>
+      mostrarTiendas === 'todas' ? true : mostrarTiendas === 'mias' ? misIds.has(s.id_store) : !misIds.has(s.id_store))
     if (buildingRoute) {
-      return stores.filter((s) => {
+      return base.filter((s) => {
         if (!s.name.toLowerCase().includes(routeSearch.toLowerCase())) return false
         if (routeFilter === 'con_pedido') return pendingByStore.has(s.id_store)
         if (routeFilter === 'sin_pedido') return !pendingByStore.has(s.id_store)
@@ -388,10 +495,10 @@ export default function Mapa() {
         return true
       })
     }
-    if (!activeFilter) return stores
-    if (activeFilter === 'pending') return stores.filter((s) => pendingByStore.has(s.id_store))
-    return stores.filter((s) => s.semaphore === activeFilter)
-  }, [stores, activeFilter, pendingByStore, buildingRoute, routeSearch, routeFilter])
+    if (!activeFilter) return base
+    if (activeFilter === 'pending') return base.filter((s) => pendingByStore.has(s.id_store))
+    return base.filter((s) => s.semaphore === activeFilter)
+  }, [stores, activeFilter, pendingByStore, buildingRoute, routeSearch, routeFilter, mostrarTiendas, misIds])
 
   const toggleFilter = (filter: 'red' | 'yellow' | 'green' | 'pending') => {
     setActiveFilter((prev) => (prev === filter ? null : filter))
@@ -428,6 +535,26 @@ export default function Mapa() {
                 ) : null}
               </Badge>
             )}
+            <Button variant="outline" size="sm" onClick={handleExportarExcelRuta}>
+              <Download size={14} className="mr-1.5" /> Exportar Excel
+            </Button>
+            <label>
+              <Button variant="outline" size="sm" asChild>
+                <span className="cursor-pointer inline-flex items-center">
+                  <Upload size={14} className="mr-1.5" /> Importar Excel
+                </span>
+              </Button>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleImportarExcelRuta(file)
+                  e.target.value = ''
+                }}
+              />
+            </label>
             <Button variant="ghost" size="sm" onClick={cancelRouteBuilding} disabled={savingRoute}>
               Cancelar
             </Button>
@@ -476,6 +603,49 @@ export default function Mapa() {
             ))}
           </SelectContent>
         </Select>
+
+        <Select value={mostrarTiendas} onValueChange={(v) => setMostrarTiendas(v as 'todas' | 'mias' | 'nuevas')}>
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Tiendas" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas las tiendas de la app</SelectItem>
+            <SelectItem value="mias">Solo mis tiendas</SelectItem>
+            <SelectItem value="nuevas">Las que aún no tengo</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {buildingRoute && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase whitespace-nowrap">
+              Pedidos con entrega abierta
+            </span>
+            <Input
+              type="date"
+              value={preorderDateFilter}
+              onChange={(e) => setPreorderDateFilter(e.target.value)}
+              className="w-[150px]"
+            />
+            <select
+              value={preorderTimeFilter}
+              onChange={(e) => setPreorderTimeFilter(e.target.value as any)}
+              className="text-sm rounded-lg border border-border px-2 bg-white h-9"
+            >
+              <option value="todos">Mañana y tarde</option>
+              <option value="MAÑANA">Solo mañana</option>
+              <option value="TARDE">Solo tarde</option>
+            </select>
+            {preorderDateFilter && (
+              <button
+                type="button"
+                onClick={() => { setPreorderDateFilter(''); setPreorderTimeFilter('todos') }}
+                className="text-xs underline text-muted-foreground/70 whitespace-nowrap"
+              >
+                Quitar
+              </button>
+            )}
+          </div>
+        )}
 
         {!buildingRoute && (
           <div className="flex items-center gap-3 ml-auto text-sm text-muted-foreground">
@@ -566,14 +736,13 @@ export default function Mapa() {
             selectedStops={selectedStops}
             storeEstimates={storeEstimates}
             onToggle={toggleStop}
+            onSetTurno={setStopTurno}
+            assignTurno={assignTurno}
+            onSetAssignTurno={setAssignTurno}
             search={routeSearch}
             onSearchChange={setRouteSearch}
             filter={routeFilter}
             onFilterChange={setRouteFilter}
-            preorderDate={preorderDateFilter}
-            onPreorderDateChange={setPreorderDateFilter}
-            preorderTime={preorderTimeFilter}
-            onPreorderTimeChange={setPreorderTimeFilter}
           />
         )}
         {!buildingRoute && selectedStore && (
@@ -597,6 +766,28 @@ export default function Mapa() {
             <div>
               <Label>Nombre de la ruta</Label>
               <Input value={routeName} onChange={(e) => setRouteName(e.target.value)} placeholder="Ej. Ruta Centro" />
+            </div>
+            <div className="border border-border rounded-lg p-3 space-y-2">
+              <Label>Horario real de esta ruta</Label>
+              <p className="text-xs text-muted-foreground">Para saber a que hora le toca a cada tienda mañana o tarde.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Mañana: de</Label>
+                  <div className="flex items-center gap-1">
+                    <Input type="time" value={mananaInicio} onChange={(e) => setMananaInicio(e.target.value)} />
+                    <span className="text-xs text-muted-foreground">a</span>
+                    <Input type="time" value={mananaFin} onChange={(e) => setMananaFin(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Tarde: de</Label>
+                  <div className="flex items-center gap-1">
+                    <Input type="time" value={tardeInicio} onChange={(e) => setTardeInicio(e.target.value)} />
+                    <span className="text-xs text-muted-foreground">a</span>
+                    <Input type="time" value={tardeFin} onChange={(e) => setTardeFin(e.target.value)} />
+                  </div>
+                </div>
+              </div>
             </div>
             <div>
               <Label>¿A qué chofer le asignamos esta ruta?</Label>
@@ -688,28 +879,26 @@ function RouteListPicker({
   selectedStops,
   storeEstimates,
   onToggle,
+  onSetTurno,
+  assignTurno,
+  onSetAssignTurno,
   search,
   onSearchChange,
   filter,
   onFilterChange,
-  preorderDate,
-  onPreorderDateChange,
-  preorderTime,
-  onPreorderTimeChange,
 }: {
   stores: MapStoreDTO[]
   pendingByStore: Map<number, PendingPreorderDTO[]>
   selectedStops: SelectedStop[]
   storeEstimates: Map<number, number>
   onToggle: (store: MapStoreDTO) => void
+  onSetTurno: (id_store: number, turno: 'MAÑANA' | 'TARDE') => void
+  assignTurno: 'MAÑANA' | 'TARDE'
+  onSetAssignTurno: (turno: 'MAÑANA' | 'TARDE') => void
   search: string
   onSearchChange: (value: string) => void
   filter: 'todas' | 'con_pedido' | 'sin_pedido' | 'red' | 'yellow' | 'green'
   onFilterChange: (value: 'todas' | 'con_pedido' | 'sin_pedido' | 'red' | 'yellow' | 'green') => void
-  preorderDate: string
-  onPreorderDateChange: (value: string) => void
-  preorderTime: 'todos' | 'MAÑANA' | 'TARDE'
-  onPreorderTimeChange: (value: 'todos' | 'MAÑANA' | 'TARDE') => void
 }) {
   // "stores" ya viene filtrada desde el componente padre (mismo buscador +
   // filtro que se usa para decidir que marcadores se ven en el mapa), asi
@@ -727,54 +916,60 @@ function RouteListPicker({
 
   return (
     <div className="w-[340px] shrink-0 rounded-xl border border-border bg-white p-4 overflow-y-auto">
+      <div className="mb-3 pb-3 border-b border-border">
+        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">
+          Asignando ahora a...
+        </p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onSetAssignTurno('MAÑANA')}
+            className={`flex-1 px-2 py-1.5 rounded-md text-xs font-semibold transition-colors ${assignTurno !== 'TARDE' ? 'bg-warning text-white' : 'bg-muted text-muted-foreground'}`}
+          >
+            Mañana
+          </button>
+          <button
+            type="button"
+            onClick={() => onSetAssignTurno('TARDE')}
+            className={`flex-1 px-2 py-1.5 rounded-md text-xs font-semibold transition-colors ${assignTurno === 'TARDE' ? 'bg-info text-white' : 'bg-muted text-muted-foreground'}`}
+          >
+            Tarde
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          Las tiendas que selecciones de aquí en adelante se agregan a "{assignTurno === 'TARDE' ? 'Tarde' : 'Mañana'}".
+        </p>
+      </div>
+
       {selectedStops.length > 0 && (
         <div className="mb-4 pb-4 border-b border-border">
           <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">
             Orden de la ruta ({selectedStops.length})
           </p>
-          <ul className="space-y-1.5">
-            {selectedStops.map((s, i) => (
-              <li key={s.id_store} className="flex items-center gap-2 text-sm">
-                <span className="w-5 h-5 rounded-full bg-success text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                {s.semaphore && <span className={`w-2 h-2 rounded-full shrink-0 ${SEMAPHORE_DOT_MAP[s.semaphore]}`} />}
-                <span className="flex-1 truncate">{s.store_name}</span>
-              </li>
-            ))}
-          </ul>
+          {(['MAÑANA', 'TARDE'] as const).map((turno) => {
+            const group = selectedStops.filter((s) => s.turno === turno)
+            if (group.length === 0) return null
+            return (
+              <div key={turno} className="mb-2 last:mb-0">
+                <p className={`text-[11px] font-bold uppercase mb-1 ${turno === 'TARDE' ? 'text-info' : 'text-warning-foreground dark:text-warning'}`}>
+                  {turno === 'TARDE' ? 'Tarde' : 'Mañana'} ({group.length})
+                </p>
+                <ul className="space-y-1.5">
+                  {group.map((s) => (
+                    <li key={s.id_store} className="flex items-center gap-2 text-sm">
+                      <span className="w-5 h-5 rounded-full bg-success text-white text-xs font-bold flex items-center justify-center shrink-0">
+                        {(orderByStore.get(s.id_store) ?? 0)}
+                      </span>
+                      {s.semaphore && <span className={`w-2 h-2 rounded-full shrink-0 ${SEMAPHORE_DOT_MAP[s.semaphore]}`} />}
+                      <span className="flex-1 truncate">{s.store_name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          })}
         </div>
       )}
-
-      <div className="mb-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">
-          Pedidos con entrega para...
-        </p>
-        <div className="flex gap-2">
-          <Input
-            type="date"
-            value={preorderDate}
-            onChange={(e) => onPreorderDateChange(e.target.value)}
-            className="flex-1"
-          />
-          <select
-            value={preorderTime}
-            onChange={(e) => onPreorderTimeChange(e.target.value as any)}
-            className="text-sm rounded-lg border border-border px-2 bg-white"
-          >
-            <option value="todos">Mañana y tarde</option>
-            <option value="MAÑANA">Solo mañana</option>
-            <option value="TARDE">Solo tarde</option>
-          </select>
-        </div>
-        {preorderDate && (
-          <button
-            type="button"
-            onClick={() => { onPreorderDateChange(''); onPreorderTimeChange('todos') }}
-            className="text-xs underline text-muted-foreground/70 mt-1"
-          >
-            Quitar filtro de fecha
-          </button>
-        )}
-      </div>
 
       <Input
         placeholder="Buscar tienda..."
@@ -804,6 +999,7 @@ function RouteListPicker({
           {stores.map((store) => {
             const order = orderByStore.get(store.id_store)
             const hasPending = pendingByStore.has(store.id_store)
+            const selectedStop = selectedStops.find((s) => s.id_store === store.id_store)
             return (
               <li key={store.id_store}>
                 <button
@@ -829,6 +1025,24 @@ function RouteListPicker({
                     </p>
                   )}
                 </button>
+                {selectedStop && (
+                  <div className="flex items-center gap-1 mt-1 pl-1">
+                    <button
+                      type="button"
+                      onClick={() => onSetTurno(store.id_store, 'MAÑANA')}
+                      className={`flex-1 px-2 py-1 rounded-md text-xs font-medium ${selectedStop.turno !== 'TARDE' ? 'bg-warning text-white' : 'bg-muted text-muted-foreground'}`}
+                    >
+                      Mañana
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSetTurno(store.id_store, 'TARDE')}
+                      className={`flex-1 px-2 py-1 rounded-md text-xs font-medium ${selectedStop.turno === 'TARDE' ? 'bg-info text-white' : 'bg-muted text-muted-foreground'}`}
+                    >
+                      Tarde
+                    </button>
+                  </div>
+                )}
               </li>
             )
           })}

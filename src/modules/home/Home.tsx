@@ -100,15 +100,15 @@ export function Home() {
         </div>
       ) : isSuperAdmin ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 stagger-children">
-          <StatCard title="Clientes" value={(superStats?.totalClients ?? 0).toLocaleString()} icon={Users} description="Total de clientes" trend={{ value: 12.5, isPositive: true }} />
-          <StatCard title="Promotores" value={(superStats?.totalUsuariosPromotores ?? 0).toLocaleString()} icon={UserCheck} accent="#2563eb" description="Registrados" trend={{ value: 8.2, isPositive: true }} />
-          <StatCard title="Establecimientos" value={(superStats?.totalStores ?? 0).toLocaleString()} icon={Store} accent="#7c3aed" description="Total" trend={{ value: 3.1, isPositive: true }} />
-          <StatCard title="Activos" value={(superStats?.activeUsersPromoters ?? 0).toLocaleString()} icon={Briefcase} accent="#16a34a" description={`${dateFrom.toLocaleDateString("es-MX")} – ${dateTo.toLocaleDateString("es-MX")}`} />
+          <StatCard title="Clientes" value={(superStats?.totalClients ?? 0).toLocaleString()} icon={Users} description="Total de clientes" />
+          <StatCard title="Promotores" value={(superStats?.totalUsuariosPromotores ?? 0).toLocaleString()} icon={UserCheck} accent="#2563eb" description="Registrados" />
+          <StatCard title="Establecimientos" value={(superStats?.totalStores ?? 0).toLocaleString()} icon={Store} accent="#7c3aed" description="Total" />
+          <StatCard title="Promotores activos" value={(superStats?.activeUsersPromoters ?? 0).toLocaleString()} icon={Briefcase} accent="#16a34a" description={`${dateFrom.toLocaleDateString("es-MX")} – ${dateTo.toLocaleDateString("es-MX")}`} />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 stagger-children">
           <StatCard title="Mis Establecimientos" value={(adminStats?.totalStores ?? 0).toLocaleString()} icon={Store} accent="#7c3aed" description="De tu negocio" />
-          <StatCard title="Mis Pedidos" value={(adminStats?.totalOrders ?? 0).toLocaleString()} icon={ShoppingCart} accent="#2563eb" description="Generados" />
+          <StatCard title="Órdenes de visita" value={(adminStats?.totalOrders ?? 0).toLocaleString()} icon={ShoppingCart} accent="#2563eb" description="Generadas" />
           <StatCard title="Total Promotores" value={(adminStats?.totalPromoters ?? 0).toLocaleString()} icon={UserCheck} description="En la plataforma" />
           <StatCard title="Activos" value={(adminStats?.activePromoters ?? 0).toLocaleString()} icon={Briefcase} accent="#16a34a" description="Cuenta activa" />
         </div>

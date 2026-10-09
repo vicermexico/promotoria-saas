@@ -11,6 +11,7 @@ export interface RequestDTO {
     id_status: number;
     b_active: boolean;
     b_preorder?: boolean;
+    preorder_date_mode?: string;
     dt_register: Date;
     dt_update: Date;
     request_products?: RequestProductDTO[];

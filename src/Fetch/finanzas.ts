@@ -66,7 +66,22 @@ export interface InvoiceLog {
   dt_register: string;
 }
 
+export interface ClientChargeTaskItem {
+  id: number;
+  id_charge: number;
+  id_order: number;
+  id_task: number;
+  f_amount: string;
+  task: {
+    id_task: number;
+    store?: Record<string, any> | null;
+    request?: Record<string, any> | null;
+    promoter?: { id: number; name: string; lastname: string | null; email: string | null; phone: string } | null;
+  };
+}
+
 export interface ClientInvoiceDetail extends ClientInvoice {
+  tasks: ClientChargeTaskItem[];
   evidences: InvoiceEvidence[];
   logs: InvoiceLog[];
 }
@@ -130,7 +145,17 @@ export const getMyInvoices = (filters?: Omit<InvoiceFilters, "id_client">) => {
 };
 
 export const getMyInvoiceDetail = (id_invoice: number) =>
-  api.get<ApiResponse<ClientInvoice>>(`/finances/client-charges/invoices/${id_invoice}`);
+  api.get<ApiResponse<ClientInvoiceDetail>>(`/finances/client-charges/invoices/${id_invoice}`);
+
+export interface PendingOrderItem {
+  id_order: number;
+  f_amount: number;
+  task_count: number;
+  order: Record<string, any> | null;
+}
+
+export const getPendingOrders = () =>
+  api.get<ApiResponse<PendingOrderItem[]>>(`/finances/client-charges/pending-orders`);
 
 // El endpoint es PATCH con multipart/form-data; api.upload solo hace POST,
 // así que aquí hacemos el fetch directo para poder usar PATCH.
@@ -342,6 +367,12 @@ export interface PromoterPayment {
   id_user_payer: number | null;
   dt_register: string;
   dt_updated: string;
+  promoter?: {
+    id: number;
+    name: string;
+    lastname: string | null;
+    phone: string;
+  } | null;
 }
 
 export interface GeneratePromoterPaymentsPayload {

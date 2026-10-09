@@ -1,3 +1,5 @@
+import MisEstablecimientos from "@/modules/establecimientos/MisEstablecimientos"
+import Equipo from "@/modules/equipo/Equipo"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 
 import { Layout } from "@/layout"
@@ -5,7 +7,9 @@ import { Home } from '@/modules/home'
 import { NotFound } from '@/modules/not-found'
 import { Maintenance } from '@/modules/maintenance'
 import { Finanzas, FinanzasActivadores, FinanzasPromotores } from '@/modules/finanzas'
-import { ConfigurarApp } from '@/modules/configuracion'
+import { ConfigurarApp, VideosIntroduccion } from '@/modules/configuracion'
+import { FaqAyuda } from '@/modules/faq-ayuda'
+import { DudasCliente } from '@/modules/dudas-cliente/DudasCliente'
 import { Perfil, MiNegocio } from '@/modules/perfil'
 import { PrivateRoute, Login, RestorePassword, CambiarPasswordObligatorio } from '@/modules/auth'
 import { EliminarCuenta } from '@/modules/eliminar-cuenta'
@@ -72,6 +76,8 @@ export default function AppRouter() {
           <Route path="producto/:id_product" element={<ProductoForm />} />
           <Route path="producto/detalle/:id_product" element={<ProductoDetalle />} />
           <Route path="establecimientos" element={<Establecimientos />} />
+          <Route path="mis-establecimientos" element={<MisEstablecimientos />} />
+          <Route path="equipo" element={<Equipo />} />
           <Route path="canales-venta" element={<CanalesVenta />} />
           <Route path="establecimiento" element={<Establecimiento />} />
           <Route path="establecimiento/:id_store" element={<Establecimiento />} />
@@ -101,6 +107,9 @@ export default function AppRouter() {
           <Route path="finanzas/pago-activadores" element={<FinanzasActivadores />} />
           <Route path="finanzas/gestion-pagos" element={<Finanzas />} />
           <Route path="configurar-app" element={<ConfigurarApp />} />
+          <Route path="videos-introduccion" element={<VideosIntroduccion />} />
+          <Route path="dudas-preguntas" element={<FaqAyuda />} />
+          <Route path="dudas-cliente" element={<DudasCliente />} />
           <Route path="reportes/pedidos" element={<PedidosList />} />
           <Route path="perfil" element={<Perfil />} />
           <Route path="mi-negocio" element={<MiNegocio />} />

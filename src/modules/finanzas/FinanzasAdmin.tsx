@@ -1,24 +1,33 @@
 import { toast } from "sonner"
 import { useEffect, useState, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Loader2, CheckCircle2, Clock, Banknote, Upload, AlertCircle, AlertTriangle } from "lucide-react"
+import { Loader2, CheckCircle2, Clock, Banknote, Upload, AlertCircle, AlertTriangle, PackageSearch, Eye } from "lucide-react"
 
 import { Button, DataTable, PageHeader, PageWrapper, StatCard } from "@/components"
 import {
   getMyInvoices,
+  getPendingOrders,
   ClientInvoice,
+  PendingOrderItem,
   InvoiceStatusId,
   INVOICE_STATUS,
   INVOICE_STATUS_LABEL,
   isInvoiceOverdue,
 } from "@/Fetch/finanzas"
 import { ModalPagarCobro } from "./components/ModalPagarCobro"
+import { ModalDetalleFactura } from "./components/ModalDetalleFactura"
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
 
 const fmtDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("es-MX") : "—";
+
+const fmtFechaLarga = (d: string) =>
+  new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "long", year: "numeric" }).format(new Date(d));
+
+const fmtPeriodo = (inicio: string, fin: string) =>
+  `Del ${fmtFechaLarga(inicio)} al ${fmtFechaLarga(fin)}`;
 
 const STATUS_STYLE: Record<InvoiceStatusId, string> = {
   [INVOICE_STATUS.PENDIENTE_PAGO]: "bg-warning/20 text-warning-foreground dark:text-warning",
@@ -53,7 +62,11 @@ export function FinanzasAdmin() {
   const [facturas, setFacturas] = useState<ClientInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [facturaSel, setFacturaSel] = useState<ClientInvoice | null>(null);
+  const [facturaVer, setFacturaVer] = useState<ClientInvoice | null>(null);
   const [filtro, setFiltro] = useState<FiltroVista>("todas");
+
+  const [pendientes, setPendientes] = useState<PendingOrderItem[]>([]);
+  const [loadingPendientes, setLoadingPendientes] = useState(true);
 
   const cargar = useCallback(() => {
     setLoading(true);
@@ -63,8 +76,18 @@ export function FinanzasAdmin() {
       .finally(() => setLoading(false));
   }, [filtro]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  const cargarPendientes = useCallback(() => {
+    setLoadingPendientes(true);
+    getPendingOrders()
+      .then((res) => { if (res.ok) setPendientes(res.data); })
+      .catch(() => toast.error("Error al cargar las órdenes por facturar"))
+      .finally(() => setLoadingPendientes(false));
+  }, []);
 
+  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { cargarPendientes(); }, [cargarPendientes]);
+
+  const totalPorFacturar = pendientes.reduce((a, p) => a + Number(p.f_amount), 0);
   const totalAdeudado = facturas
     .filter((f) => f.id_status === INVOICE_STATUS.PENDIENTE_PAGO || f.id_status === INVOICE_STATUS.OBSERVADO)
     .reduce((a, f) => a + Number(f.f_amount), 0);
@@ -75,12 +98,29 @@ export function FinanzasAdmin() {
     {
       accessorKey: "vc_folio",
       header: "Folio",
-      cell: ({ row }) => <span className="font-bold text-foreground">{row.original.vc_folio ?? `#${row.original.id}`}</span>,
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={() => setFacturaVer(row.original)}
+          className="font-bold text-foreground hover:text-info hover:underline text-left"
+        >
+          {row.original.vc_folio ?? `#${row.original.id}`}
+        </button>
+      ),
     },
     {
       id: "pedido",
-      header: "Pedido",
-      cell: ({ row }) => <span className="text-sm" style={{ color: "var(--text-secondary)" }}>#{row.original.id_order}</span>,
+      header: "Orden de visita",
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={() => setFacturaVer(row.original)}
+          className="text-sm hover:text-info hover:underline"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          #{row.original.id_order}
+        </button>
+      ),
     },
     {
       accessorKey: "f_amount",
@@ -88,9 +128,13 @@ export function FinanzasAdmin() {
       cell: ({ row }) => <span className="font-semibold">{fmt(Number(row.original.f_amount))}</span>,
     },
     {
-      accessorKey: "dt_register",
-      header: "Emitida",
-      cell: ({ row }) => fmtDate(row.original.dt_register),
+      id: "periodo",
+      header: "Periodo de corte",
+      cell: ({ row }) => (
+        <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+          {fmtPeriodo(row.original.charge.dt_start, row.original.charge.dt_end)}
+        </span>
+      ),
     },
     {
       accessorKey: "dt_due",
@@ -114,14 +158,39 @@ export function FinanzasAdmin() {
       header: "Operaciones",
       cell: ({ row }) => {
         const f = row.original;
-        if (!PUEDE_PAGAR.includes(f.id_status)) return <span className="text-xs text-muted-foreground/70">—</span>;
         return (
-          <Button size="sm" variant="outline" onClick={() => setFacturaSel(f)} className="text-info border-info/30 hover:bg-info/10">
-            <Upload className="w-3 h-3 mr-1" />
-            Pagar
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setFacturaVer(f)}>
+              <Eye className="w-3 h-3 mr-1" />
+              Ver
+            </Button>
+            {PUEDE_PAGAR.includes(f.id_status) && (
+              <Button size="sm" variant="outline" onClick={() => setFacturaSel(f)} className="text-info border-info/30 hover:bg-info/10">
+                <Upload className="w-3 h-3 mr-1" />
+                Pagar
+              </Button>
+            )}
+          </div>
         );
       },
+    },
+  ];
+
+  const columnsPendientes: ColumnDef<PendingOrderItem>[] = [
+    {
+      id: "pedido",
+      header: "Orden de visita",
+      cell: ({ row }) => <span className="font-bold text-foreground">#{row.original.id_order}</span>,
+    },
+    {
+      id: "tareas",
+      header: "Tiendas visitadas",
+      cell: ({ row }) => <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{row.original.task_count}</span>,
+    },
+    {
+      id: "monto",
+      header: "Monto estimado",
+      cell: ({ row }) => <span className="font-semibold">{fmt(Number(row.original.f_amount))}</span>,
     },
   ];
 
@@ -139,14 +208,28 @@ export function FinanzasAdmin() {
     <PageWrapper>
       <PageHeader
         title="Gestión de pagos"
-        subtitle="Tus facturas por pedido: lo que debes, lo que está en validación y lo que ya pagaste"
+        subtitle="Tus facturas por orden de visita: lo que debes, lo que está en validación y lo que ya pagaste"
         icon={Banknote}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 stagger-children">
-        <StatCard title="Por pagar" value={fmt(totalAdeudado)} icon={AlertCircle} accent="#dc2626" />
-        <StatCard title="En validación" value={fmt(totalValidacion)} icon={Clock} accent="#2563eb" />
-        <StatCard title="Pagado" value={fmt(totalPagado)} icon={CheckCircle2} accent="#16a34a" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+        <StatCard title="Próximas órdenes a facturar" value={fmt(totalPorFacturar)} icon={PackageSearch} accent="#7c3aed" wrapTitle />
+        <StatCard title="Factura en validación" value={fmt(totalValidacion)} icon={Clock} accent="#2563eb" wrapTitle />
+        <StatCard title="Factura por pagar" value={fmt(totalAdeudado)} icon={AlertCircle} accent="#dc2626" wrapTitle />
+        <StatCard title="Facturas Pagadas" value={fmt(totalPagado)} icon={CheckCircle2} accent="#16a34a" wrapTitle />
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-foreground">Órdenes de visita por facturar (aún no están en ningún corte)</h3>
+        <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--border)" }}>
+          <DataTable
+            columns={columnsPendientes}
+            data={pendientes}
+            isLoading={loadingPendientes}
+            emptyMessage="No tienes órdenes de visita pendientes de facturar por ahora."
+            pagination={{ pageSize: 5 }}
+          />
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -183,6 +266,12 @@ export function FinanzasAdmin() {
         open={facturaSel !== null}
         onClose={() => setFacturaSel(null)}
         onSuccess={cargar}
+      />
+
+      <ModalDetalleFactura
+        factura={facturaVer}
+        open={facturaVer !== null}
+        onClose={() => setFacturaVer(null)}
       />
     </PageWrapper>
   );

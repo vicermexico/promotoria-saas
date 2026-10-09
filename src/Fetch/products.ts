@@ -2,6 +2,11 @@ import { useAuthStore } from "../stores/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+const authH = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${useAuthStore.getState().token}`,
+});
+
 // NOTA: crear/actualizar productos (incl. imagen) se hace con FormData vía
 // `api.upload` en src/modules/productos/NewProduct.tsx. Aquí ya no hay rutas base64.
 
@@ -25,7 +30,7 @@ export const getAllProducts = async () => {
   
   
 export const getProductsByClient = async (id_client: number) => {
-  const response = await fetch(`${API_URL}/admin/products/client/${id_client}`);
+  const response = await fetch(`${API_URL}/admin/products/client/${id_client}`, { headers: authH() });
 
   if (!response.ok) {
     throw new Error("Error al obtener productos");
@@ -35,7 +40,7 @@ export const getProductsByClient = async (id_client: number) => {
 };
 
 export const getProductById = async (id_product: number) => {
-  const response = await fetch(`${API_URL}/admin/products/${id_product}`);
+  const response = await fetch(`${API_URL}/admin/products/${id_product}`, { headers: authH() });
 
   if (!response.ok) {
     throw new Error("Error al obtener producto");
@@ -92,9 +97,7 @@ export const updateProduct = async (
 ) => {
   const response = await fetch(`${API_URL}/admin/products/${id_product}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: authH(),
     body: JSON.stringify(data),
   });
 
@@ -109,6 +112,7 @@ export const updateProduct = async (
 export const deleteProduct = async (id_product: number) => {
   const response = await fetch(`${API_URL}/admin/products/${id_product}`, {
     method: "DELETE",
+    headers: authH(),
   });
 
   if (!response.ok) {

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 
 import { useAuthStore } from "@/stores"
-import { changePassword } from "@/Fetch/perfil"
+import { changePasswordForced } from "@/Fetch/perfil"
 import { Button, Input } from "@/components"
 
 export function CambiarPasswordObligatorio() {
@@ -26,7 +26,7 @@ export function CambiarPasswordObligatorio() {
     }
     setLoading(true)
     try {
-      await changePassword({ currentPassword: "1234", newPassword })
+      await changePasswordForced(newPassword)
       toast.success("Contraseña actualizada")
       if (user && token) {
         login(token, { ...user, must_change_password: false })
@@ -46,7 +46,7 @@ export function CambiarPasswordObligatorio() {
           Pon una nueva contraseña
         </h1>
         <p className="text-sm text-muted-foreground mb-8">
-          Tu contraseña fue restablecida. Antes de continuar, pon una nueva que solo tú conozcas.
+          Tu contraseña es temporal. Antes de continuar, pon una nueva que solo tú conozcas.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

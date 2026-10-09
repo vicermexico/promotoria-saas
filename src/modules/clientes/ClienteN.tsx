@@ -38,6 +38,10 @@ export default function NuevoCliente() {
     vc_colonia: "",
     vc_cp: "",
     vc_observaciones: "",
+    ow_nombre: "",
+    ow_apellido: "",
+    ow_celular: "",
+    ow_password: "",
     b_activo: true,
   });
 
@@ -73,6 +77,12 @@ export default function NuevoCliente() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const ownerCel = formData.ow_celular.trim();
+    if (ownerCel || formData.ow_password) {
+      if (!/^\d{10}$/.test(ownerCel)) { toast.error("El celular del dueño debe tener 10 dígitos"); return; }
+      if (formData.ow_password.length < 6) { toast.error("La contraseña temporal debe tener al menos 6 caracteres"); return; }
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -95,6 +105,10 @@ export default function NuevoCliente() {
         neighborhood: formData.vc_colonia.trim().toLowerCase() || undefined,
         zip: formData.vc_cp || undefined,
         addiccional_notes: formData.vc_observaciones || undefined,
+        owner_phone: formData.ow_celular.trim() || undefined,
+        owner_password: formData.ow_password || undefined,
+        owner_name: formData.ow_nombre.trim() || undefined,
+        owner_lastname: formData.ow_apellido.trim() || undefined,
       });
 
       const clienteId: number = request.data.id_client;
@@ -586,6 +600,35 @@ export default function NuevoCliente() {
               </div>
 
 
+            </div>
+          </div>
+
+          {/* Usuario dueño */}
+          <div className="bg-white rounded-lg border border-border p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 size={20} className="text-muted-foreground" />
+              <h2 className="text-lg font-medium text-foreground">Usuario dueño (opcional)</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Si llenas estos datos, se crea el usuario con el que el cliente entra al panel. Entra con su celular y deberá cambiar la contraseña al iniciar.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Nombre</label>
+                <input type="text" name="ow_nombre" value={formData.ow_nombre} onChange={handleChange} placeholder="Nombre del dueño" className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Apellido</label>
+                <input type="text" name="ow_apellido" value={formData.ow_apellido} onChange={handleChange} placeholder="Apellido" className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Celular (10 dígitos)</label>
+                <input type="text" inputMode="numeric" name="ow_celular" value={formData.ow_celular} onChange={(e) => setFormData((prev) => ({ ...prev, ow_celular: e.target.value.replace(/\D/g, "").slice(0, 10) }))} placeholder="8112345678" className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Contraseña temporal</label>
+                <input type="text" name="ow_password" value={formData.ow_password} onChange={handleChange} placeholder="Mínimo 6 caracteres" className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" />
+              </div>
             </div>
           </div>
 

@@ -31,7 +31,7 @@ export const registClient = async (data: ClientData) => {
     try {
         const res = await fetch(`${API_URL}/superadmin/create-client`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
 
@@ -47,7 +47,7 @@ export const getCLientsList = async () => {
   try {
     const res = await fetch(`${API_URL}/superadmin/get_clients_list`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
     });
 
     if (!res.ok) throw new Error("Error al obtener la lista de clientes");
@@ -62,7 +62,7 @@ export const getClientById = async (id: number) => {
     try {
         const res = await fetch(`${API_URL}/superadmin/get_client/${id}`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: getAuthHeaders(),
         });
 
         if (!res.ok) throw new Error("Error al obtener el cliente");
@@ -104,3 +104,37 @@ export const deleteCLientById = async (id: number) => {
         console.error("f.deleteCLientById:", error);
     }
 }
+
+// ---- Mi Negocio: datos del propio cliente (requiere sesión) ----
+export const getMyClient = async () => {
+  const res = await fetch(`${API_URL}/users/client-profile/me`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al obtener el cliente");
+  }
+  return res.json();
+};
+
+export const updateMyClient = async (payload: {
+  name: string;
+  rfc: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  notes: string;
+}) => {
+  const res = await fetch(`${API_URL}/users/client-profile/me`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al guardar la información");
+  }
+  return res.json();
+};

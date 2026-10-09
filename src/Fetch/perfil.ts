@@ -94,3 +94,19 @@ export const changePassword = async (
   }
   return res.json();
 };
+
+/** POST /admin/change-password-forced — cambio obligatorio (sin pedir la actual) */
+export const changePasswordForced = async (
+  newPassword: string
+): Promise<{ ok: boolean }> => {
+  const res = await fetch(`${API_URL}/admin/change-password-forced`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ newPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error || "Error al cambiar la contraseña");
+  }
+  return res.json();
+};

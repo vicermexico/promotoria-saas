@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Loader2, Users, Plus, Receipt, Clock, CheckCircle2 } from "lucide-react"
 
 import { ModalGenerarPagoPromotor, ModalRegistrarPagoPromotor } from "./components"
-import { Button, DataTable, PageWrapper, PageHeader, StatCard, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components"
+import { Button, DataTable, PageWrapper, PageHeader, StatCard, Select, SelectTrigger, SelectContent, SelectItem, SelectValue, Input } from "@/components"
 import {
   getAllPromoterPayments,
   PromoterPayment,
@@ -35,6 +35,7 @@ export default function FinanzasPromotores() {
   const [pagoSel, setPagoSel] = useState<PromoterPayment | null>(null);
   const [generarOpen, setGenerarOpen] = useState(false);
   const [estadoFiltro, setEstadoFiltro] = useState<string>("todos");
+  const [busqueda, setBusqueda] = useState("");
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -50,14 +51,38 @@ export default function FinanzasPromotores() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  const pagosFiltrados = estadoFiltro === "todos" ? pagos : pagos.filter((p) => p.id_status === Number(estadoFiltro));
+  const nombrePromotor = (p: PromoterPayment) =>
+    p.promoter ? `${p.promoter.name} ${p.promoter.lastname ?? ""}`.trim() : `Promotor #${p.id_promoter}`;
+
+  const pagosFiltrados = pagos
+    .filter((p) => estadoFiltro === "todos" || p.id_status === Number(estadoFiltro))
+    .filter((p) => {
+      if (!busqueda.trim()) return true;
+      const q = busqueda.trim().toLowerCase();
+      return (
+        nombrePromotor(p).toLowerCase().includes(q) ||
+        (p.promoter?.phone ?? "").includes(q) ||
+        String(p.id_promoter).includes(q) ||
+        (p.vc_folio ?? "").toLowerCase().includes(q)
+      );
+    });
 
   const totalPorPagar = pagosFiltrados.filter((p) => p.id_status === PROMOTER_PAYMENT_STATUS.POR_PAGAR).reduce((a, p) => a + Number(p.f_total), 0);
   const totalPagado = pagosFiltrados.filter((p) => p.id_status === PROMOTER_PAYMENT_STATUS.PAGADO).reduce((a, p) => a + Number(p.f_total), 0);
 
   const columnas: ColumnDef<PromoterPayment>[] = [
     { accessorKey: "vc_folio", header: "Folio", cell: ({ row }) => <span className="font-bold text-muted-foreground">{row.original.vc_folio ?? `#${row.original.id_payment}`}</span> },
-    { id: "promotor", header: "Promotor", cell: ({ row }) => <span className="font-medium">Promotor #{row.original.id_promoter}</span> },
+    {
+      id: "promotor", header: "Promotor",
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-medium">{nombrePromotor(row.original)}</span>
+          {row.original.promoter?.phone && (
+            <span className="text-xs text-muted-foreground">{row.original.promoter.phone}</span>
+          )}
+        </div>
+      ),
+    },
     { id: "periodo", header: "Periodo", cell: ({ row }) => <span className="text-sm text-muted-foreground">{fmtDate(row.original.dt_start)} — {fmtDate(row.original.dt_end)}</span> },
     { accessorKey: "f_total", header: "Total", cell: ({ row }) => <span className="font-semibold text-foreground">{fmt(Number(row.original.f_total))}</span> },
     { accessorKey: "dt_payment", header: "Fecha de pago", cell: ({ row }) => fmtDate(row.original.dt_payment) },
@@ -100,7 +125,13 @@ export default function FinanzasPromotores() {
         <StatCard title="Pagado" value={fmt(totalPagado)} icon={CheckCircle2} accent="#16a34a" />
       </div>
 
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-3">
+        <Input
+          placeholder="Buscar por nombre, teléfono o folio..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-[280px]"
+        />
         <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Estado" />

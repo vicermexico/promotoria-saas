@@ -13,4 +13,5 @@ export interface clientDetail {
     state?: string
     zip?: string
     addiccional_notes?: string
+    is_owner?: boolean
 }

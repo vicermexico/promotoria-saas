@@ -4,6 +4,7 @@ export interface RouteTemplateStoreDTO {
   id_route_template_store: number;
   id_route_template: number;
   id_store: number;
+  turno: 'MAÑANA' | 'TARDE';
 }
 
 export interface RouteTemplateDTO {
@@ -18,7 +19,7 @@ export interface RouteTemplateDTO {
 export interface RouteTemplateInput {
   id_client: number;
   name: string;
-  storeIds: number[];
+  stores: { id_store: number; turno: 'MAÑANA' | 'TARDE' }[];
 }
 
 export const getRouteTemplates = (id_client: number) =>

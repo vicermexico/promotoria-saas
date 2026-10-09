@@ -109,7 +109,7 @@ export default function MisPrepedidos() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Mis Prepedidos"
+        title="Mis Pedidos"
         subtitle="Pedidos que tus promotores levantaron con los encargados de tienda por faltantes de inventario"
         actions={
           <Button onClick={handleExportExcel} disabled={exporting || filteredPreorders.length === 0} variant="outline">

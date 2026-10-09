@@ -104,7 +104,7 @@ export default function FinanzasSuperAdmin() {
   const columnasFacturas: ColumnDef<ClientInvoice>[] = [
     { accessorKey: "id_status", header: "Estado", cell: ({ row }) => <BadgeInvoice invoice={row.original} /> },
     { id: "cliente", header: "Cliente", cell: ({ row }) => <span className="font-medium">{nombreCliente(row.original.charge.id_client)}</span> },
-    { id: "pedido", header: "Pedido", cell: ({ row }) => <span className="text-sm text-muted-foreground">#{row.original.id_order}</span> },
+    { id: "pedido", header: "Orden", cell: ({ row }) => <span className="text-sm text-muted-foreground">#{row.original.id_order}</span> },
     { accessorKey: "f_amount", header: "Total", cell: ({ row }) => <span className="font-semibold text-foreground">{fmt(Number(row.original.f_amount))}</span> },
     { accessorKey: "dt_register", header: "Emitida", cell: ({ row }) => fmtDate(row.original.dt_register) },
     {

@@ -361,7 +361,7 @@ export const CrearPedido = () => {
       return
     }
     if (items.length === 0) {
-      toast.error('Agrega al menos una solicitud al pedido.')
+      toast.error('Agrega al menos una solicitud a la orden de visita.')
       return
     }
     const itemsSinTiendas = items.filter((i) => i.storesSeleccionadas.length === 0)
@@ -394,15 +394,15 @@ export const CrearPedido = () => {
       const resp = await api.post<ApiResponse<OrderDTO>>('/orders', payload)
 
       if (!resp.ok) {
-        toast.error(resp.message || 'Error al guardar el pedido.')
+        toast.error(resp.message || 'Error al guardar la orden de visita.')
         return
       }
 
-      toast.success(resp.message || 'Pedido creado exitosamente.')
+      toast.success(resp.message || 'Orden de visita creada exitosamente.')
       navigate('/pedidos')
     } catch (error) {
       console.error('Error al guardar:', error)
-      toast.error(error instanceof Error ? error.message : 'Error al guardar el pedido.')
+      toast.error(error instanceof Error ? error.message : 'Error al guardar la orden de visita.')
     } finally {
       setGuardando(false)
     }
@@ -411,8 +411,8 @@ export const CrearPedido = () => {
   return (
     <PageWrapper>
       <PageHeader
-        title="Crear Pedido"
-        subtitle="Asigna tiendas a solicitudes para generar una orden de servicio"
+        title="Crear orden de visita"
+        subtitle="Asigna tiendas a solicitudes para generar una orden de visita"
         icon={ClipboardList}
         actions={
           <Button
@@ -470,11 +470,11 @@ export const CrearPedido = () => {
           {/* ----- COLUMNA 1: RESUMEN (sticky, como en Solicitudes) ----- */}
           <aside className="lg:col-span-1 lg:sticky lg:top-6 order-first">
             <div className="bg-primary text-primary-foreground p-5 rounded-xl shadow-lg space-y-4">
-              <h3 className="font-bold text-lg">Resumen del pedido</h3>
+              <h3 className="font-bold text-lg">Resumen de la orden</h3>
 
               {items.length === 0 ? (
                 <p className="text-sm text-primary-foreground/70">
-                  Agrega solicitudes y asígnales tiendas para ver el costo del pedido.
+                  Agrega solicitudes y asígnales tiendas para ver el costo de la orden.
                 </p>
               ) : (
                 <div className="space-y-2 text-sm">
@@ -627,7 +627,7 @@ export const CrearPedido = () => {
 
                             {storeFilterMode === 'mine' && stores.length === 0 ? (
                               <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4">
-                                Por el momento no tienes ninguna tienda tuya. Haz tu primer pedido asignando tiendas de la app, y se irán asignando a tus tiendas.
+                                Por el momento no tienes ninguna tienda tuya. Haz tu primera orden de visita asignando tiendas de la app, y se irán asignando a tus tiendas.
                               </div>
                             ) : (
                               <>
