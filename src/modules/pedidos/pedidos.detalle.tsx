@@ -370,7 +370,7 @@ export function PedidoDetalle() {
   const enProgreso = tasks.filter((t) => t.id_status >= 2 && t.id_status <= 5).length
   const completadas = tasks.filter((t) => t.id_status === 6).length
   const terminadas = tasks.filter((t) => t.id_status === 7).length
-  const canceladas = tasks.filter((t) => t.id_status === 8 || t.id_status === 9 || t.id_status === 0).length
+  const canceladas = tasks.filter((t) => t.id_status === 8 || t.id_status === 0).length
 
   return (
     <PageWrapper>

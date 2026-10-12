@@ -339,18 +339,25 @@ export function TareaDetalle() {
           )}
 
           {/* Cancelación */}
-          {task.id_status === 0 && task.vc_cancel_reason && (
+          {(task.id_status === 0 || task.id_status === 9 || (task.id_status === 7 && (task as any).vc_master_note)) && task.vc_cancel_reason && (
             <Card>
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Ban size={18} className="text-destructive" />
                   <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                    Motivo de cancelación
+                    {task.id_status === 7 ? "Motivo del rechazo del cliente" : "Motivo de cancelación"}
                     {task.vc_cancel_type === "negocio" && " (cierre de la orden)"}
                     {task.vc_cancel_type === "cliente" && " (por el cliente)"}
+                    {task.vc_cancel_type === "master" && " (confirmado por el master)"}
+                    {task.id_status === 9 && " (en revisión del master)"}
                   </h3>
                 </div>
                 <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{task.vc_cancel_reason}</p>
+                {(task as any).vc_master_note && (
+                  <p className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
+                    <strong>Nota del master:</strong> {(task as any).vc_master_note}
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

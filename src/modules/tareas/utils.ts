@@ -23,6 +23,7 @@ export const TASK_STATUS: Record<number, TaskStatusInfo> = {
   6: { label: "En revisión", dot: "bg-teal-500", bg: "bg-teal-500/10", text: "text-teal-600" },
   7: { label: "Finalizada", dot: "bg-success", bg: "bg-success/10", text: "text-success" },
   8: { label: "Terminada con incidencia", dot: "bg-destructive", bg: "bg-destructive/15", text: "text-destructive" },
+  9: { label: "Rechazada por el cliente · en revisión del master", dot: "bg-warning", bg: "bg-warning/15", text: "text-warning-foreground dark:text-warning" },
 }
 
 const UNKNOWN_STATUS: TaskStatusInfo = {

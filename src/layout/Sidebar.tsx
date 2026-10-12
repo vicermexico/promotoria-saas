@@ -48,6 +48,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         { route: "/solicitudes", icon: ClipboardList, label: "Solicitudes", show: isAdmin || isNegocio },
         { route: "/pedidos", icon: FileText, label: "Órdenes de visita", show: isAdmin || isNegocio },
         { route: "/tareas", icon: CheckSquare2, label: "Visitas", show: isAdmin || isNegocio },
+        { route: "/rechazos", icon: ClipboardCheck, label: "Rechazos por revisar", show: isAdmin },
         { route: "/logistica", icon: Map, label: "Logística", show: isAdmin || isNegocio },
         { route: "/mis-prepedidos", icon: ClipboardCheck, label: "Mis Pedidos", show: isNegocio },
         { route: "/choferes", icon: Truck, label: "Choferes", show: isNegocio },
