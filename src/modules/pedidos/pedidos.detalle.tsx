@@ -45,7 +45,8 @@ export function PedidoDetalle() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set())
   const [bulkApproving, setBulkApproving] = useState(false)
 
-  const approvableTasks = tasks.filter((t) => t.id_status === 6)
+  const esMaster = useAuthStore.getState().user?.i_rol === 1
+  const approvableTasks = esMaster ? [] : tasks.filter((t) => t.id_status === 6)
 
   const toggleTaskSelected = (id_task: number) => {
     setSelectedTaskIds((prev) => {
@@ -521,7 +522,7 @@ export function PedidoDetalle() {
                 return (
                   <Card key={task.id_task} className="transition-shadow hover:shadow-md">
                     <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                      {task.id_status === 6 && (
+                      {task.id_status === 6 && !esMaster && (
                         <Checkbox
                           checked={selectedTaskIds.has(task.id_task)}
                           onCheckedChange={() => toggleTaskSelected(task.id_task)}
@@ -563,7 +564,7 @@ export function PedidoDetalle() {
                         </div>
 
                         <div className="flex gap-2">
-                          {task.id_status === 6 && (
+                          {task.id_status === 6 && !esMaster && (
                             <>
                               <Button
                                 size="sm"

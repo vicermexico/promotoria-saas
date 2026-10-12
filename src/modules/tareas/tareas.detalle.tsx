@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/stores'
 import { toast } from "sonner"
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
@@ -197,7 +198,7 @@ export function TareaDetalle() {
         icon={CheckSquare2}
         actions={
           <div className="flex gap-2">
-            {task.id_status === 6 && (
+            {task.id_status === 6 && useAuthStore.getState().user?.i_rol !== 1 && (
               <>
                 <Button variant="destructive" size="sm" onClick={() => setCancelDialog(true)} disabled={approving}>
                   <XCircle size={14} className="mr-1.5" /> Rechazar
