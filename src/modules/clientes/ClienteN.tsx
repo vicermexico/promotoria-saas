@@ -38,6 +38,7 @@ export default function NuevoCliente() {
     vc_colonia: "",
     vc_cp: "",
     vc_observaciones: "",
+    vc_payment_mode: "CREDITO",
     ow_nombre: "",
     ow_apellido: "",
     ow_celular: "",
@@ -105,6 +106,7 @@ export default function NuevoCliente() {
         neighborhood: formData.vc_colonia.trim().toLowerCase() || undefined,
         zip: formData.vc_cp || undefined,
         addiccional_notes: formData.vc_observaciones || undefined,
+        vc_payment_mode: formData.vc_payment_mode,
         owner_phone: formData.ow_celular.trim() || undefined,
         owner_password: formData.ow_password || undefined,
         owner_name: formData.ow_nombre.trim() || undefined,
@@ -600,6 +602,41 @@ export default function NuevoCliente() {
               </div>
 
 
+            </div>
+          </div>
+
+          {/* Tipo de cuenta */}
+          <div className="bg-white rounded-lg border border-border p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 size={20} className="text-muted-foreground" />
+              <h2 className="text-lg font-medium text-foreground">Tipo de cuenta</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Con crédito: se le cobra por corte, como hasta ahora. Prepago: tiene un saldo que se va descontando con cada tienda que agrega a un pedido, y recarga cuando se le acaba.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[
+                { v: "CREDITO", t: "Con crédito", d: "Se le cobra por corte" },
+                { v: "PREPAGO", t: "Sin crédito (prepago)", d: "Descuenta de su saldo. Empieza en $0 y recarga cuando lo necesite" },
+              ].map((o) => (
+                <label
+                  key={o.v}
+                  className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer ${formData.vc_payment_mode === o.v ? "border-primary bg-primary/5" : "border-border"}`}
+                >
+                  <input
+                    type="radio"
+                    name="vc_payment_mode"
+                    value={o.v}
+                    checked={formData.vc_payment_mode === o.v}
+                    onChange={() => setFormData((prev) => ({ ...prev, vc_payment_mode: o.v }))}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-foreground">{o.t}</span>
+                    <span className="block text-sm text-muted-foreground">{o.d}</span>
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
 

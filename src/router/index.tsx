@@ -17,6 +17,8 @@ import { AvisoPrivacidad, Terminos } from '@/modules/legal'
 import { InvitacionPromotor } from '@/modules/invitacion/InvitacionPromotor'
 import { ListadoPreguntas, PreguntaDetalle } from '@/modules/preguntas'
 import { Clientes, ClienteDetalle, CrearCliente } from '@/modules/clientes'
+import RecargasMaster from '@/modules/finanzas/RecargasMaster'
+import MiSaldo from '@/components/saldo/MiSaldo'
 import { CrearPedido, PedidoDetalle, PedidosList } from '@/modules/pedidos'
 import { TareasListado, TareaDetalle } from '@/modules/tareas'
 import { PromotoresList, PromoterDetalle } from '@/modules/promotores'
@@ -102,6 +104,8 @@ export default function AppRouter() {
           <Route path="promotores" element={<PromotoresList />} />
           <Route path="detalle-promotor/:id" element={<PromoterDetalle />} />
           <Route path="finanzas" element={<Finanzas />} />
+          <Route path="recargas" element={<RecargasMaster />} />
+          <Route path="mi-saldo" element={<MiSaldo />} />
           <Route path="finanzas/cobro-clientes" element={<Finanzas />} />
           <Route path="finanzas/pago-promotores" element={<FinanzasPromotores />} />
           <Route path="finanzas/pago-activadores" element={<FinanzasActivadores />} />

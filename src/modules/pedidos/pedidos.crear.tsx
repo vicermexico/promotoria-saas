@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, Store, ClipboardList, Check, Loader2, ChevronDown, ChevronUp, X, Download, Upload, MapPin } from 'lucide-react'
 
 import { useAuthStore } from '@/stores'
+import { useSaldo } from '@/components/saldo/useSaldo'
 import { api, ApiResponse } from '@/lib'
 import { getCLientsList } from '@/Fetch/clientes'
 import {
@@ -60,6 +61,7 @@ export const CrearPedido = () => {
   // --- UI ---
   const [requestAbierta, setRequestAbierta] = useState<number | null>(null)
   const [guardando, setGuardando] = useState(false)
+  const { summary: saldo } = useSaldo(selectedClientId)
 
   // --- Cargar clientes (super admin) ---
   useEffect(() => {
@@ -170,6 +172,20 @@ export const CrearPedido = () => {
   }
 
   const toggleStore = (id_request: number, id_store: number) => {
+    // Cliente prepago: no deja agregar una tienda si el saldo ya no alcanza.
+    const itemActual = items.find((i) => i.id_request === id_request)
+    if (
+      itemActual &&
+      esPrepago &&
+      !itemActual.storesSeleccionadas.includes(id_store) &&
+      granTotal + Number(itemActual.f_value) > saldoActual + 0.0001
+    ) {
+      toast.error(
+        `Saldo insuficiente: tu saldo es de $${saldoActual.toFixed(2)} y cada tienda de esta solicitud cuesta $${Number(itemActual.f_value).toFixed(2)}. Recarga tu saldo para agregar mas tiendas.`,
+        { duration: 6000 },
+      )
+      return
+    }
     setItems((prev) =>
       prev.map((item) => {
         if (item.id_request !== id_request) return item
@@ -352,7 +368,12 @@ export const CrearPedido = () => {
 
   const granTotal = items.reduce((sum, item) => sum + calcularCostoItem(item), 0)
   const totalTiendas = items.reduce((sum, item) => sum + item.storesSeleccionadas.length, 0)
-  const puedeGuardar = !!selectedClientId && items.length > 0 && items.every((i) => i.storesSeleccionadas.length > 0)
+  // --- Saldo prepago ---
+  const esPrepago = saldo?.vc_payment_mode === 'PREPAGO'
+  const saldoActual = saldo ? Number(saldo.f_balance) : 0
+  const saldoInsuficiente = esPrepago && granTotal > saldoActual + 0.0001
+  const faltante = Math.max(0, granTotal - saldoActual)
+  const puedeGuardar = !!selectedClientId && items.length > 0 && items.every((i) => i.storesSeleccionadas.length > 0) && !saldoInsuficiente
 
   // --- Guardar ---
   const handleGuardar = async () => {
@@ -399,6 +420,7 @@ export const CrearPedido = () => {
       }
 
       toast.success(resp.message || 'Orden de visita creada exitosamente.')
+      window.dispatchEvent(new Event('saldo:actualizar'))
       navigate('/pedidos')
     } catch (error) {
       console.error('Error al guardar:', error)
@@ -498,6 +520,38 @@ export const CrearPedido = () => {
                     <span className="font-bold">Costo Total:</span>
                     <span className="font-bold tabular-nums">${granTotal.toFixed(2)}</span>
                   </div>
+                </div>
+              )}
+
+              {esPrepago && (
+                <div className="rounded-lg bg-primary-foreground/10 p-3 text-sm space-y-1">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-primary-foreground/80">Tu saldo:</span>
+                    <span className="font-medium tabular-nums">${saldoActual.toFixed(2)}</span>
+                  </div>
+                  {saldoInsuficiente ? (
+                    <>
+                      <p className="text-xs font-semibold">
+                        Saldo insuficiente: te faltan ${faltante.toFixed(2)}. Quita tiendas o recarga tu saldo.
+                      </p>
+                      {user?.i_rol === 2 && (
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(new Event('saldo:recargar'))}
+                          className="underline text-xs font-semibold"
+                        >
+                          Recargar ahora
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    items.length > 0 && (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-primary-foreground/80">Saldo despues del pedido:</span>
+                        <span className="font-medium tabular-nums">${(saldoActual - granTotal).toFixed(2)}</span>
+                      </div>
+                    )
+                  )}
                 </div>
               )}
 

@@ -6,6 +6,7 @@ import { puedeVer } from "@/lib/permisos"
 import { usePageTransition } from "@/lib/motion";
 import { Sidebar } from "./Sidebar"
 import { AsistenteCliente } from "@/components/asistente/AsistenteCliente"
+import { BarraSaldo } from "@/components/saldo/BarraSaldo"
 import { useAuthStore } from "@/stores"
 import { SidebarProvider, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, ThemeToggleHeader } from '@/components'
 import { useAuthCheck } from '@/hooks'
@@ -112,6 +113,7 @@ export function Layout() {
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {user?.i_rol === 2 && <BarraSaldo />}
           {/* Mobile header */}
           <div className="lg:hidden flex items-center p-4 border-b border-border bg-card/80 backdrop-blur relative z-50">
             <button
