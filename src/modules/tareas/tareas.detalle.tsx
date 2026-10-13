@@ -339,7 +339,7 @@ export function TareaDetalle() {
           )}
 
           {/* Cancelación */}
-          {(task.id_status === 0 || task.id_status === 9 || (task.id_status === 7 && (task as any).vc_master_note)) && task.vc_cancel_reason && (
+          {(task.id_status === 0 || task.id_status === 10 || (task.id_status === 7 && (task as any).vc_master_note)) && task.vc_cancel_reason && (
             <Card>
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 mb-3">
@@ -349,7 +349,7 @@ export function TareaDetalle() {
                     {task.vc_cancel_type === "negocio" && " (cierre de la orden)"}
                     {task.vc_cancel_type === "cliente" && " (por el cliente)"}
                     {task.vc_cancel_type === "master" && " (confirmado por el master)"}
-                    {task.id_status === 9 && " (en revisión del master)"}
+                    {task.id_status === 10 && " (en revisión del master)"}
                   </h3>
                 </div>
                 <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{task.vc_cancel_reason}</p>
