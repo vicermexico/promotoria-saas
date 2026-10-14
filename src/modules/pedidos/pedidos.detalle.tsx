@@ -282,10 +282,12 @@ export function PedidoDetalle() {
         return
       }
       toast.success("Orden cerrada")
+      window.dispatchEvent(new Event("saldo:actualizar"))
       setCloseDialog(false)
       await fetchAll()
-    } catch {
-      toast.error("Error al cerrar la orden")
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : "Error al cerrar la orden")
+      setCloseDialog(false)
     } finally {
       setClosing(false)
     }
@@ -387,7 +389,14 @@ export function PedidoDetalle() {
               </Button>
             )}
             {order.id_status === 1 && (
-              <Button variant="destructive" onClick={() => setCloseDialog(true)}>
+              <Button variant="destructive" onClick={() => {
+                  const trabajando = tasks.filter((t) => t.id_status >= 3 && t.id_status <= 5).length
+                  if (!esMaster && trabajando > 0) {
+                    toast.error(`Hay ${trabajando} visita(s) con un promotor en camino o trabajando. Espera a que terminen para cerrar la orden.`)
+                    return
+                  }
+                  setCloseDialog(true)
+                }}>
                 <Lock size={16} className="mr-2" /> Cerrar orden
               </Button>
             )}
