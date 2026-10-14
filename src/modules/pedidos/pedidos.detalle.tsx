@@ -386,7 +386,7 @@ export function PedidoDetalle() {
                 Exportar todo a Excel
               </Button>
             )}
-            {(isAdmin() || isSuperAdmin()) && order.id_status === 1 && (
+            {order.id_status === 1 && (
               <Button variant="destructive" onClick={() => setCloseDialog(true)}>
                 <Lock size={16} className="mr-2" /> Cerrar orden
               </Button>
@@ -673,7 +673,7 @@ export function PedidoDetalle() {
           <AlertDialogHeader>
             <AlertDialogTitle>Cerrar orden</AlertDialogTitle>
             <AlertDialogDescription>
-              Las tareas que estén en revisión se aprobarán automáticamente. Las que ya estén terminadas no se
+              Solo se cobran las visitas realizadas; las no realizadas se devuelven al saldo del cliente (cuentas de prepago). Las tareas que estén en revisión se aprobarán automáticamente. Las que ya estén terminadas no se
               verán afectadas. Las que aún no se hayan contestado se cancelarán automáticamente con el motivo
               "Cierre de pedido" y se notificará a los promotores asignados. Esta acción no se puede deshacer.
             </AlertDialogDescription>
