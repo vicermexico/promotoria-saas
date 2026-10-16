@@ -40,6 +40,7 @@ import PerfilChofer from '@/modules/chofer-panel/Perfil'
 import StopDetailPage from '@/modules/chofer-panel/StopDetailPage'
 import NuevaTienda from '@/modules/chofer-panel/NuevaTienda'
 import CambiarPasswordChofer from '@/modules/chofer-panel/CambiarPasswordChofer'
+import ChoferDemo from '@/modules/chofer-panel/ChoferDemo'
 
 export default function AppRouter() {
   return (
@@ -61,6 +62,7 @@ export default function AppRouter() {
           <Route path="parada/:id_stop" element={<StopDetailPage />} />
           <Route path="nueva-tienda" element={<NuevaTienda />} />
           <Route path="nueva-password" element={<CambiarPasswordChofer />} />
+          <Route path="demo" element={<ChoferDemo />} />
           <Route path="perfil" element={<PerfilChofer />} />
         </Route>
 
