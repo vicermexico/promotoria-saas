@@ -25,6 +25,7 @@ export const CATALOGO_MENU: ItemMenuAdmin[] = [
   { route: "/finanzas/cobro-clientes", label: "Cobro a clientes", seccion: "Finanzas" },
   { route: "/finanzas/pago-promotores", label: "Pago a promotores", seccion: "Finanzas" },
   { route: "/finanzas/pago-activadores", label: "Pago a activadores", seccion: "Finanzas" },
+  { route: "/finanzas/pago-choferes", label: "Pago a choferes", seccion: "Finanzas" },
 ]
 
 // null = sin restricciones (master, clientes, o sesion vieja sin el dato)

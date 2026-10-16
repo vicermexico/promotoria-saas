@@ -7,6 +7,7 @@ import { Home } from '@/modules/home'
 import { NotFound } from '@/modules/not-found'
 import { Maintenance } from '@/modules/maintenance'
 import { Finanzas, FinanzasActivadores, FinanzasPromotores } from '@/modules/finanzas'
+import FinanzasChoferes from '@/modules/finanzas/FinanzasChoferes'
 import { ConfigurarApp, VideosIntroduccion } from '@/modules/configuracion'
 import { FaqAyuda } from '@/modules/faq-ayuda'
 import { DudasCliente } from '@/modules/dudas-cliente/DudasCliente'
@@ -41,6 +42,7 @@ import StopDetailPage from '@/modules/chofer-panel/StopDetailPage'
 import NuevaTienda from '@/modules/chofer-panel/NuevaTienda'
 import CambiarPasswordChofer from '@/modules/chofer-panel/CambiarPasswordChofer'
 import ChoferDemo from '@/modules/chofer-panel/ChoferDemo'
+import Invitar from '@/modules/chofer-panel/Invitar'
 
 export default function AppRouter() {
   return (
@@ -63,6 +65,7 @@ export default function AppRouter() {
           <Route path="nueva-tienda" element={<NuevaTienda />} />
           <Route path="nueva-password" element={<CambiarPasswordChofer />} />
           <Route path="demo" element={<ChoferDemo />} />
+          <Route path="invitar" element={<Invitar />} />
           <Route path="perfil" element={<PerfilChofer />} />
         </Route>
 
@@ -113,6 +116,7 @@ export default function AppRouter() {
           <Route path="finanzas/cobro-clientes" element={<Finanzas />} />
           <Route path="finanzas/pago-promotores" element={<FinanzasPromotores />} />
           <Route path="finanzas/pago-activadores" element={<FinanzasActivadores />} />
+          <Route path="finanzas/pago-choferes" element={<FinanzasChoferes />} />
           <Route path="finanzas/gestion-pagos" element={<Finanzas />} />
           <Route path="configurar-app" element={<ConfigurarApp />} />
           <Route path="videos-introduccion" element={<VideosIntroduccion />} />

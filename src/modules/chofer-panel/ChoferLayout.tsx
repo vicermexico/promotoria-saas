@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
-import { Map as MapIcon, ListChecks, UserCircle, LogOut, Route as RouteIcon, PlayCircle } from 'lucide-react'
+import { Map as MapIcon, ListChecks, UserCircle, LogOut, Route as RouteIcon, PlayCircle, UserPlus } from 'lucide-react'
 
 import { useDriverAuthStore } from '@/stores/driverAuthStore'
 import RouteSelectorDialog from './RouteSelectorDialog'
@@ -8,6 +8,7 @@ import RouteSelectorDialog from './RouteSelectorDialog'
 const NAV_ITEMS = [
   { path: '/chofer/mapa', icon: MapIcon, label: 'Ruta mapa' },
   { path: '/chofer/lista', icon: ListChecks, label: 'Ruta lista' },
+  { path: '/chofer/invitar', icon: UserPlus, label: 'Invitar' },
   { path: '/chofer/perfil', icon: UserCircle, label: 'Perfil' },
   { path: '/chofer/demo', icon: PlayCircle, label: 'DEMO' },
 ]

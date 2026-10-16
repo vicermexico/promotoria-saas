@@ -95,6 +95,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         { route: "/finanzas/cobro-clientes", icon: HandCoins, label: "Cobro a clientes", show: isAdmin },
         { route: "/finanzas/pago-promotores", icon: Banknote, label: "Pago a promotores", show: isAdmin },
         { route: "/finanzas/pago-activadores", icon: UserPlus, label: "Pago a activadores", show: isAdmin },
+        { route: "/finanzas/pago-choferes", icon: Truck, label: "Pago a choferes", show: isAdmin },
         { route: "/finanzas/gestion-pagos", icon: CreditCard, label: "Gestión de pagos", show: isNegocio },
       ],
     },
