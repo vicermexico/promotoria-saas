@@ -1,7 +1,8 @@
 import { toast } from "sonner"
-import { useState } from "react"
-import { Banknote, ArrowLeftRight, CreditCard, Store, Loader2, UploadCloud, Receipt, FileText, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Banknote, ArrowLeftRight, CreditCard, Store, Loader2, UploadCloud, Receipt, FileText, X, Copy } from "lucide-react"
 
+import { getClientPaymentAccount } from "@/Fetch/appConfig"
 import { submitInvoicePayment, ClientInvoice, MetodoPago } from "@/Fetch/finanzas"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input, Label } from "@/components"
 
@@ -24,11 +25,53 @@ const fmt = (n: number) =>
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
+interface BankInfo {
+  bank: string;
+  holder: string;
+  clabe: string;
+  account: string;
+  instructions: string;
+}
+
+function Dato({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success("Copiado");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  };
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5">
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium text-foreground break-all">{value}</p>
+      </div>
+      <button type="button" onClick={copiar} className="p-2 rounded-lg hover:bg-accent shrink-0" title="Copiar">
+        <Copy size={16} />
+      </button>
+    </div>
+  );
+}
+
 export function ModalPagarCobro({ cobro, open, onClose, onSuccess }: Props) {
   const [metodo, setMetodo] = useState<MetodoPago>("transferencia");
   const [fechaPago, setFechaPago] = useState(hoyISO());
   const [file, setFile] = useState<File | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [bank, setBank] = useState<BankInfo | null>(null);
+
+  useEffect(() => {
+    if (!open || !cobro) return;
+    setBank(null);
+    getClientPaymentAccount(cobro.charge.id_client)
+      .then((r) => { if (r.ok) setBank(r.data.account); })
+      .catch(() => undefined);
+  }, [open, cobro]);
+
+  const sinDatos = !!bank && !bank.clabe && !bank.account;
 
   const reset = () => {
     setMetodo("transferencia");
@@ -106,6 +149,24 @@ export function ModalPagarCobro({ cobro, open, onClose, onSuccess }: Props) {
             <span className="text-muted-foreground font-medium">Total de la factura</span>
             <span className="text-xl font-bold text-info">{fmt(Number(cobro.f_amount))}</span>
           </div>
+        </div>
+
+        {/* A donde pagar */}
+        <div className="rounded-lg border border-border p-3">
+          <p className="text-sm font-medium mb-1">Haz tu transferencia o depósito a:</p>
+          {!bank ? (
+            <p className="text-sm text-muted-foreground">Cargando datos...</p>
+          ) : sinDatos ? (
+            <p className="text-sm text-muted-foreground">Aún no hay datos bancarios configurados. Contacta a soporte para saber dónde pagar.</p>
+          ) : (
+            <div className="divide-y divide-border">
+              <Dato label="Banco" value={bank.bank} />
+              <Dato label="Titular" value={bank.holder} />
+              <Dato label="CLABE" value={bank.clabe} />
+              <Dato label="Cuenta" value={bank.account} />
+              {bank.instructions && <p className="text-xs text-muted-foreground pt-2">{bank.instructions}</p>}
+            </div>
+          )}
         </div>
 
         {/* Método */}

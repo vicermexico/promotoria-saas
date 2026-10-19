@@ -178,10 +178,10 @@ export const CrearPedido = () => {
       itemActual &&
       esPrepago &&
       !itemActual.storesSeleccionadas.includes(id_store) &&
-      granTotal + Number(itemActual.f_value) > saldoActual + 0.0001
+      (granTotal + Number(itemActual.f_value)) * 1.16 > saldoActual + 0.0001
     ) {
       toast.error(
-        `Saldo insuficiente: tu saldo es de $${saldoActual.toFixed(2)} y cada tienda de esta solicitud cuesta $${Number(itemActual.f_value).toFixed(2)}. Recarga tu saldo para agregar mas tiendas.`,
+        `Saldo insuficiente: tu saldo es de $${saldoActual.toFixed(2)} y cada tienda de esta solicitud cuesta $${(Number(itemActual.f_value) * 1.16).toFixed(2)} con IVA. Recarga tu saldo para agregar mas tiendas.`,
         { duration: 6000 },
       )
       return
@@ -368,11 +368,13 @@ export const CrearPedido = () => {
 
   const granTotal = items.reduce((sum, item) => sum + calcularCostoItem(item), 0)
   const totalTiendas = items.reduce((sum, item) => sum + item.storesSeleccionadas.length, 0)
+  const ivaMonto = Math.round(granTotal * 0.16 * 100) / 100
+  const totalConIva = Math.round((granTotal + ivaMonto) * 100) / 100
   // --- Saldo prepago ---
   const esPrepago = saldo?.vc_payment_mode === 'PREPAGO'
   const saldoActual = saldo ? Number(saldo.f_balance) : 0
-  const saldoInsuficiente = esPrepago && granTotal > saldoActual + 0.0001
-  const faltante = Math.max(0, granTotal - saldoActual)
+  const saldoInsuficiente = esPrepago && totalConIva > saldoActual + 0.0001
+  const faltante = Math.max(0, totalConIva - saldoActual)
   const puedeGuardar = !!selectedClientId && items.length > 0 && items.every((i) => i.storesSeleccionadas.length > 0) && !saldoInsuficiente
 
   // --- Guardar ---
@@ -516,9 +518,17 @@ export const CrearPedido = () => {
                     <span className="text-primary-foreground/70">Tiendas totales:</span>
                     <span className="font-medium">{totalTiendas}</span>
                   </div>
+                  <div className="flex justify-between gap-4 pt-2 border-t border-primary-foreground/20">
+                    <span className="text-primary-foreground/70">Subtotal:</span>
+                    <span className="font-medium tabular-nums">${granTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-primary-foreground/70">IVA (16%):</span>
+                    <span className="font-medium tabular-nums">${ivaMonto.toFixed(2)}</span>
+                  </div>
                   <div className="flex justify-between gap-4 text-lg pt-2 border-t border-primary-foreground/20">
                     <span className="font-bold">Costo Total:</span>
-                    <span className="font-bold tabular-nums">${granTotal.toFixed(2)}</span>
+                    <span className="font-bold tabular-nums">${totalConIva.toFixed(2)}</span>
                   </div>
                 </div>
               )}
@@ -548,7 +558,7 @@ export const CrearPedido = () => {
                     items.length > 0 && (
                       <div className="flex justify-between gap-4">
                         <span className="text-primary-foreground/80">Saldo despues del pedido:</span>
-                        <span className="font-medium tabular-nums">${(saldoActual - granTotal).toFixed(2)}</span>
+                        <span className="font-medium tabular-nums">${(saldoActual - totalConIva).toFixed(2)}</span>
                       </div>
                     )
                   )}

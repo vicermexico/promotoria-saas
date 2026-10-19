@@ -10,6 +10,7 @@ import { ApiResponse, api, formatDate} from "@/lib"
 import { Alert, AlertDescription, Input, Label, ModalCustom } from "@/components"
 import { ClientDTO, CreateUserInCLientDetailDTO, UsuarioDTO, ProductDTO } from '@/dtos'
 import { getDriversByClient, DriverDTO } from '@/Fetch/drivers'
+import { CuentaPagoCliente } from './CuentaPagoCliente'
 
 
 export default function ClienteDetalle() {
@@ -259,6 +260,8 @@ function TabInfo({ cliente }: { cliente: ClientDTO | null }) {
 
       {/* Columna Lateral */}
       <div className="space-y-6">
+        <CuentaPagoCliente id_client={cliente?.id_client} />
+
         {/* Fechas */}
         <div className="p-4 bg-muted/50 rounded-lg space-y-4">
           <h3 className="font-semibold text-foreground flex items-center gap-2">

@@ -4,6 +4,7 @@ import { Loader2, Settings, UploadCloud, Video, Trash2, Save, MessageSquareText,
 
 import { getLoginVideo, uploadLoginVideo, removeLoginVideo, getTaskInstructions, setTaskInstructions, getWhatsappSoporteClientes, setWhatsappSoporteClientes, getWhatsappSoportePromotores, setWhatsappSoportePromotores, getReferralShareMessage, setReferralShareMessage, getRequestPricingSettings, setRequestPricingSettings } from "@/Fetch/appConfig"
 import { Button, PageWrapper, PageHeader, Textarea, Input } from "@/components"
+import { CuentaPagoGeneral } from "./CuentaPagoGeneral"
 
 export default function ConfigurarApp() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -363,6 +364,8 @@ export default function ConfigurarApp() {
             Guardar configuración
           </Button>
         </div>
+
+        <CuentaPagoGeneral />
       </div>
     </PageWrapper>
   );

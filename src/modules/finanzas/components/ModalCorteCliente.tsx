@@ -168,7 +168,7 @@ export function ModalCorteCliente({ cliente, onClose, onGenerated }: Props) {
           ) : calculo ? (
             calculo.total > 0 ? (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total a cobrar en este corte ({calculo.pedidos} pedido{calculo.pedidos === 1 ? "" : "s"})</span>
+                <span className="text-muted-foreground">Total a cobrar en este corte, con IVA ({calculo.pedidos} pedido{calculo.pedidos === 1 ? "" : "s"})</span>
                 <span className="text-lg font-bold text-foreground">{fmt(calculo.total)}</span>
               </div>
             ) : (

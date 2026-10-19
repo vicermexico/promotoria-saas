@@ -63,6 +63,18 @@ export function ModalDetalleFactura({ factura, open, onClose }: Props) {
               Del {fmtFechaLarga(factura.charge.dt_start)} al {fmtFechaLarga(factura.charge.dt_end)}
             </span>
           </div>
+          {factura.f_tax != null && Number(factura.f_tax) > 0 && (
+            <>
+              <div className="flex justify-between border-t border-border pt-2 mt-2">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium text-foreground">{fmt(Number(factura.f_subtotal))}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">IVA (16%)</span>
+                <span className="font-medium text-foreground">{fmt(Number(factura.f_tax))}</span>
+              </div>
+            </>
+          )}
           <div className="flex justify-between border-t border-border pt-2 mt-2">
             <span className="text-muted-foreground font-medium">Total a pagar</span>
             <span className="text-xl font-bold text-info">{fmt(Number(factura.f_amount))}</span>
@@ -70,7 +82,7 @@ export function ModalDetalleFactura({ factura, open, onClose }: Props) {
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Tareas que componen este monto</p>
+          <p className="text-sm font-medium text-foreground">Tareas que componen el subtotal</p>
           {loading ? (
             <div className="flex items-center justify-center py-8 gap-2">
               <Loader2 className="animate-spin w-4 h-4 text-muted-foreground" />

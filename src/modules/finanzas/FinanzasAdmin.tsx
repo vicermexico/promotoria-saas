@@ -206,7 +206,7 @@ export function FinanzasAdmin() {
     },
     {
       id: "monto",
-      header: "Monto estimado",
+      header: "Monto estimado (con IVA)",
       cell: ({ row }) => <span className="font-semibold">{fmt(Number(row.original.f_amount))}</span>,
     },
   ];

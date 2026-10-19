@@ -56,3 +56,32 @@ export const getRequestPricingSettings = () =>
 
 export const setRequestPricingSettings = (data: RequestPricingSettings) =>
   api.put<ApiResponse<{ total: number; updated: number }>>(`/app-config/request-pricing`, data);
+
+
+export interface PaymentAccount {
+  bank: string;
+  holder: string;
+  clabe: string;
+  account: string;
+  instructions: string;
+}
+
+export interface ClientPaymentAccount {
+  account: PaymentAccount;
+  is_custom: boolean;
+}
+
+export const getDefaultPaymentAccount = () =>
+  api.get<ApiResponse<PaymentAccount>>(`/app-config/payment-account`);
+
+export const setDefaultPaymentAccount = (account: PaymentAccount) =>
+  api.put<ApiResponse<PaymentAccount>>(`/app-config/payment-account`, account);
+
+export const getClientPaymentAccount = (id_client: number) =>
+  api.get<ApiResponse<ClientPaymentAccount>>(`/app-config/client-payment-account/${id_client}`);
+
+export const setClientPaymentAccount = (id_client: number, account: PaymentAccount) =>
+  api.put<ApiResponse<ClientPaymentAccount>>(`/app-config/client-payment-account/${id_client}`, account);
+
+export const resetClientPaymentAccount = (id_client: number) =>
+  api.delete<ApiResponse<ClientPaymentAccount>>(`/app-config/client-payment-account/${id_client}`);

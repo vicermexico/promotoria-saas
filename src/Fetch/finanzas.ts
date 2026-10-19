@@ -33,6 +33,8 @@ export interface ClientInvoice {
   id_order: number;
   vc_folio: string | null;
   f_amount: string;
+  f_subtotal?: string | null;
+  f_tax?: string | null;
   id_status: InvoiceStatusId;
   dt_due: string | null;
   dt_payment: string | null;
