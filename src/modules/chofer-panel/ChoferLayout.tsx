@@ -1,24 +1,23 @@
 import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
-import { Map as MapIcon, ListChecks, UserCircle, LogOut, Route as RouteIcon, PlayCircle, UserPlus } from 'lucide-react'
+import { Route as RouteIcon, LogOut, PlayCircle, UserPlus, ArrowLeft, Store } from 'lucide-react'
 
 import { useDriverAuthStore } from '@/stores/driverAuthStore'
-import RouteSelectorDialog from './RouteSelectorDialog'
 
 const NAV_ITEMS = [
-  { path: '/chofer/mapa', icon: MapIcon, label: 'Ruta mapa' },
-  { path: '/chofer/lista', icon: ListChecks, label: 'Ruta lista' },
+  { path: '/chofer/ruta', icon: RouteIcon, label: 'Mi ruta' },
   { path: '/chofer/invitar', icon: UserPlus, label: 'Invitar' },
-  { path: '/chofer/perfil', icon: UserCircle, label: 'Perfil' },
+  { path: '/chofer/nueva-tienda', icon: Store, label: 'Nueva tienda' },
   { path: '/chofer/demo', icon: PlayCircle, label: 'DEMO' },
 ]
 
 export default function ChoferLayout() {
   const isAuthenticated = useDriverAuthStore((s) => s.isAuthenticated())
+  const driver = useDriverAuthStore((s) => s.driver)
   const logout = useDriverAuthStore((s) => s.logout)
   const navigate = useNavigate()
   const location = useLocation()
-  const [showRouteSelector, setShowRouteSelector] = useState(false)
+  const [fotoRota, setFotoRota] = useState(false)
 
   if (!isAuthenticated) {
     return <Navigate to="/chofer/login" replace />
@@ -29,27 +28,44 @@ export default function ChoferLayout() {
     navigate('/chofer/login')
   }
 
-  const showRouteButton = location.pathname === '/chofer/mapa' || location.pathname === '/chofer/lista'
+  const path = location.pathname
+  const esPantallaPrincipal = NAV_ITEMS.some((i) => path === i.path)
+  const enPerfil = path === '/chofer/perfil'
+  const inicial = (driver?.name ?? '?').trim().charAt(0).toUpperCase() || '?'
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
-      {showRouteButton && (
+      <header className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-border flex items-center justify-between px-3 z-30">
+        {esPantallaPrincipal ? (
+          <span className="font-bold text-foreground">RetaiLink</span>
+        ) : (
+          <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm font-medium text-foreground p-1.5 -ml-1.5">
+            <ArrowLeft size={20} /> Atrás
+          </button>
+        )}
+
         <button
-          onClick={() => setShowRouteSelector(true)}
-          className="flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold py-3 px-4 shadow-md"
+          onClick={() => navigate('/chofer/perfil')}
+          aria-label="Mi perfil"
+          className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center font-bold bg-primary text-primary-foreground border-2 ${
+            enPerfil ? 'border-primary ring-2 ring-primary/30' : 'border-border'
+          }`}
         >
-          <RouteIcon size={18} /> Ver rutas asignadas
+          {driver?.vc_photo && !fotoRota ? (
+            <img src={driver.vc_photo} alt={driver.name} className="w-full h-full object-cover" onError={() => setFotoRota(true)} />
+          ) : (
+            inicial
+          )}
         </button>
-      )}
-      <main className="flex-1 overflow-y-auto pb-20">
+      </header>
+
+      <main className="flex-1 overflow-y-auto pt-14 pb-20">
         <Outlet />
       </main>
 
-      <RouteSelectorDialog open={showRouteSelector} onClose={() => setShowRouteSelector(false)} />
-
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border flex items-stretch h-16 z-20">
         {NAV_ITEMS.map((item) => {
-          const active = location.pathname === item.path
+          const active = path === item.path || path.startsWith(item.path + '/')
           const Icon = item.icon
           return (
             <button

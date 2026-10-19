@@ -1,11 +1,12 @@
 import { toast } from "sonner"
 import { useEffect, useState } from "react"
-import { Loader2, Receipt, CheckCircle2, XCircle } from "lucide-react"
+import { Loader2, Receipt, CheckCircle2, XCircle, Landmark, Eye, Copy } from "lucide-react"
 
 import { ACTIVATOR_PAYMENT_STATUS } from "@/Fetch/finanzas"
 import {
   getDriverActivatorPaymentById,
   submitDriverActivatorPayment,
+  revealDriverBankAccount,
   cancelDriverActivatorPayment,
   DriverActivatorPayment,
   DriverActivatorPaymentDetail,
@@ -30,6 +31,8 @@ export function ModalRegistrarPagoChofer({ pago, open, onClose, onSuccess }: Pro
   const [fechaPago, setFechaPago] = useState(hoyISO());
   const [notas, setNotas] = useState("");
   const [accion, setAccion] = useState<null | "pagar" | "cancelar">(null);
+  const [numeroCompleto, setNumeroCompleto] = useState<string | null>(null);
+  const [revelando, setRevelando] = useState(false);
 
   useEffect(() => {
     if (!open || !pago) return;
@@ -37,11 +40,35 @@ export function ModalRegistrarPagoChofer({ pago, open, onClose, onSuccess }: Pro
     setDetalle(null);
     setFechaPago(hoyISO());
     setNotas("");
+    setNumeroCompleto(null);
     getDriverActivatorPaymentById(pago.id_payment)
       .then((res) => { if (res.ok) setDetalle(res.data); })
       .catch(() => toast.error("Error al cargar el pago"))
       .finally(() => setLoading(false));
   }, [open, pago]);
+
+  const handleRevelar = async () => {
+    if (!detalle?.bank_account) return;
+    setRevelando(true);
+    try {
+      const res = await revealDriverBankAccount(detalle.bank_account.id);
+      if (res.ok) setNumeroCompleto(res.data.clabe || res.data.card_number || null);
+    } catch {
+      toast.error("Error al obtener el número completo");
+    } finally {
+      setRevelando(false);
+    }
+  };
+
+  const handleCopiar = async () => {
+    if (!numeroCompleto) return;
+    try {
+      await navigator.clipboard.writeText(numeroCompleto);
+      toast.success("Número copiado");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  };
 
   const handlePagar = async () => {
     if (!pago) return;
@@ -112,6 +139,29 @@ export function ModalRegistrarPagoChofer({ pago, open, onClose, onSuccess }: Pro
                 <span className="text-muted-foreground font-medium">Total a pagar</span>
                 <span className="text-lg font-bold text-foreground">{fmt(Number(detalle.f_total))}</span>
               </div>
+            </div>
+
+            <div className="rounded-lg border border-border p-3 text-sm space-y-1.5">
+              <p className="flex items-center gap-2 font-medium text-foreground"><Landmark className="w-4 h-4" /> Cuenta para depositar</p>
+              {detalle.bank_account ? (
+                <>
+                  <p className="text-muted-foreground">
+                    {detalle.bank_account.bank_name} · {detalle.bank_account.account_type === "CLABE" ? "CLABE" : "Tarjeta"}{" "}
+                    {numeroCompleto ?? detalle.bank_account.clabe ?? detalle.bank_account.card_number}
+                  </p>
+                  <p className="text-muted-foreground">Titular: {detalle.bank_account.account_holder_name}</p>
+                  {numeroCompleto ? (
+                    <Button variant="outline" size="sm" onClick={handleCopiar}><Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar número</Button>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={handleRevelar} disabled={revelando}>
+                      {revelando ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Eye className="w-3.5 h-3.5 mr-1.5" />}
+                      Ver número completo
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <p className="text-warning">El chofer todavía no registra su cuenta. Pídele que la dé de alta en Invitar.</p>
+              )}
             </div>
 
             {detalle.payment_tasks.length > 0 && (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Truck, Camera } from 'lucide-react'
+import { Loader2, Truck, Camera, Store } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button, Input, Label } from '@/components'
 import { driverApi, ApiResponse } from '@/lib/driverApi'
@@ -9,6 +10,7 @@ import { useDriverAuthStore, DriverProfile } from '@/stores/driverAuthStore'
 
 export default function Perfil() {
   const driver = useDriverAuthStore((s) => s.driver)
+  const navigate = useNavigate()
   const updateProfile = useDriverAuthStore((s) => s.updateProfile)
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -74,6 +76,13 @@ export default function Perfil() {
         <p className="mt-3 font-semibold text-foreground">{driver.name}</p>
         <p className="text-sm text-muted-foreground">{driver.phone}</p>
       </div>
+
+      <button
+        onClick={() => navigate('/chofer/nueva-tienda')}
+        className="w-full flex items-center gap-3 rounded-xl bg-primary text-primary-foreground p-4 shadow-md font-semibold mb-4"
+      >
+        <Store size={22} /> Dar de alta una tienda
+      </button>
 
       <div className="bg-white rounded-xl border border-border p-4 space-y-3">
         <p className="text-sm font-semibold text-foreground">Cambiar contraseña</p>

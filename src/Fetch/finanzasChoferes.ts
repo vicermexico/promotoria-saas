@@ -47,6 +47,7 @@ export const getAllDriverActivatorPayments = (filters?: { id_driver?: number; id
 export interface DriverActivatorPaymentDetail extends DriverActivatorPayment {
   payment_tasks: Array<{ id: number; id_task: number; id_promoter: number; promoter_name: string | null; f_amount: string }>;
   driver: { id_driver: number; name: string; phone: string; email: string | null } | null;
+  bank_account: { id: number; account_holder_name: string; account_type: "CLABE" | "CARD"; bank_name: string; clabe: string | null; card_number: string | null } | null;
   logs: Array<{ id_payment_log: number; vc_log: string; dt_register: string }>;
 }
 
@@ -58,3 +59,7 @@ export const submitDriverActivatorPayment = (id_payment: number, payload: { dt_p
 
 export const cancelDriverActivatorPayment = (id_payment: number) =>
   api.patch<ApiResponse<DriverActivatorPayment>>(`/finances/driver-activator-payments/${id_payment}/status`, { action: "cancel" });
+
+// Numero completo de la cuenta del chofer, solo para hacer el deposito. Cada consulta queda en bitacora.
+export const revealDriverBankAccount = (id_account: number) =>
+  api.get<ApiResponse<{ id: number; id_driver: number; clabe: string | null; card_number: string | null }>>(`/finances/driver-activator-payments/bank-accounts/${id_account}/reveal`);

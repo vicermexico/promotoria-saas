@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { GoogleMap, OverlayView } from '@react-google-maps/api'
 import { Loader2 } from 'lucide-react'
 
 import { useJsApiLoader, GOOGLE_MAPS_CONFIG } from '@/lib'
 import { getMyRoutes, updateDriverLocation, DriverRouteStopDTO } from '@/Fetch/driverPanel'
-import { useDriverRouteSelection } from '@/stores/driverRouteSelection'
 
 const MAP_CONTAINER_STYLE = { width: '100%', height: '100%' }
 const DEFAULT_CENTER = { lat: 25.7460, lng: -100.2792 }
@@ -17,20 +16,15 @@ export default function RutaMapa() {
   const [stops, setStops] = useState<DriverRouteStopDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [map, setMap] = useState<google.maps.Map | null>(null)
-  const selectedRouteId = useDriverRouteSelection((s) => s.selectedRouteId)
+  const { id_route } = useParams()
+  const selectedRouteId = Number(id_route)
 
   useEffect(() => {
     setLoading(true)
     getMyRoutes()
       .then((res) => {
-        const today = new Date().toISOString().slice(0, 10)
-        const todaysRoutes = res.data.filter((r) => r.route_date.slice(0, 10) === today)
-        if (selectedRouteId) {
-          const route = todaysRoutes.find((r) => r.id_route === selectedRouteId)
-          setStops(route?.stops ?? [])
-        } else {
-          setStops(todaysRoutes.flatMap((r) => r.stops))
-        }
+        const route = (res.data ?? []).find((r) => r.id_route === selectedRouteId)
+        setStops(route?.stops ?? [])
       })
       .catch(() => toast.error('Error al cargar tu ruta'))
       .finally(() => setLoading(false))
@@ -67,7 +61,7 @@ export default function RutaMapa() {
   }, [map, mapCenter])
 
   return (
-    <div className="h-[calc(100vh-4rem)] relative">
+    <div className="h-[calc(100vh-8.5rem)] relative">
       {(loading || !isLoaded) && (
         <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
           <Loader2 className="animate-spin text-muted-foreground" size={28} />
@@ -103,7 +97,7 @@ export default function RutaMapa() {
       )}
       {!loading && stops.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center bg-white">
-          <p className="text-sm text-muted-foreground">No tienes tiendas asignadas para hoy.</p>
+          <p className="text-sm text-muted-foreground">Esta ruta no tiene tiendas asignadas.</p>
         </div>
       )}
     </div>

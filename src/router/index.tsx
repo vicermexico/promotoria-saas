@@ -36,6 +36,8 @@ import { CrearSolicitud, EditarSolicitud, SolicitudDetalle, SolicitudesList } fr
 import ChoferLogin from '@/modules/chofer-panel/ChoferLogin'
 import ChoferLayout from '@/modules/chofer-panel/ChoferLayout'
 import RutaMapa from '@/modules/chofer-panel/RutaMapa'
+import MiRuta, { IrAMiRuta } from '@/modules/chofer-panel/MiRuta'
+import RutaOpciones from '@/modules/chofer-panel/RutaOpciones'
 import RutaListada from '@/modules/chofer-panel/RutaListada'
 import PerfilChofer from '@/modules/chofer-panel/Perfil'
 import StopDetailPage from '@/modules/chofer-panel/StopDetailPage'
@@ -59,8 +61,12 @@ export default function AppRouter() {
 
         <Route path="/chofer/login" element={<ChoferLogin />} />
         <Route path="/chofer" element={<ChoferLayout />}>
-          <Route path="mapa" element={<RutaMapa />} />
-          <Route path="lista" element={<RutaListada />} />
+          <Route path="ruta" element={<MiRuta />} />
+          <Route path="ruta/:id_route" element={<RutaOpciones />} />
+          <Route path="ruta/:id_route/mapa" element={<RutaMapa />} />
+          <Route path="ruta/:id_route/lista" element={<RutaListada />} />
+          <Route path="mapa" element={<IrAMiRuta />} />
+          <Route path="lista" element={<IrAMiRuta />} />
           <Route path="parada/:id_stop" element={<StopDetailPage />} />
           <Route path="nueva-tienda" element={<NuevaTienda />} />
           <Route path="nueva-password" element={<CambiarPasswordChofer />} />
