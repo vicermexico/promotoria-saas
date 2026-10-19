@@ -386,8 +386,9 @@ export const CrearSolicitud = () => {
                 )}
                 <div className="flex justify-between gap-4 text-lg pt-3 border-t border-primary-foreground/20">
                   <span className="font-bold">Costo Total:</span>
-                  <span className="font-bold tabular-nums">${granTotal.toFixed(2)}</span>
+                  <span className="font-bold tabular-nums">${granTotal.toFixed(2)} <span className="text-xs font-semibold">+ IVA</span></span>
                 </div>
+                <p className="text-xs text-primary-foreground/70">Los costos son más IVA (16%). El IVA se suma al crear el pedido o al facturar.</p>
               </div>
 
               <div className="flex items-center justify-between gap-2 text-xs text-primary-foreground/70 pt-1">
