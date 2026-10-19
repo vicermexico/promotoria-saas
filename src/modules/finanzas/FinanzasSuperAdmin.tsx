@@ -1,9 +1,9 @@
 import { toast } from "sonner"
 import { useEffect, useState, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Clock, AlertCircle, Loader2, Banknote, Settings, Plus, Receipt, AlertTriangle, CheckCircle2, FileText } from "lucide-react"
+import { Clock, AlertCircle, Loader2, Banknote, Plus, Receipt, AlertTriangle, CheckCircle2, FileText } from "lucide-react"
 
-import { ModalRevisarCobro, ModalConfigFinanzas } from "./components"
+import { ModalRevisarCobro } from "./components"
 import { ModalCorteCliente } from "./components/ModalCorteCliente"
 import { Button, DataTable, PageWrapper, PageHeader, StatCard, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components"
 import { getCLientsList } from "@/Fetch/clientes"
@@ -57,7 +57,6 @@ export default function FinanzasSuperAdmin() {
   const [clienteCorte, setClienteCorte] = useState<PendingClientCharges["clients"][number] | null>(null);
 
   const [cobroSel, setCobroSel] = useState<ClientInvoice | null>(null);
-  const [configOpen, setConfigOpen] = useState(false);
 
   useEffect(() => {
     getCLientsList()
@@ -157,11 +156,6 @@ export default function FinanzasSuperAdmin() {
         title="Cobro a clientes"
         subtitle="Gestión de cobros a clientes"
         icon={Banknote}
-        actions={
-          <Button variant="outline" onClick={() => setConfigOpen(true)} className="flex items-center gap-2">
-            <Settings size={16} /> Configuración
-          </Button>
-        }
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 stagger-children">
@@ -240,7 +234,6 @@ export default function FinanzasSuperAdmin() {
 
       <ModalCorteCliente cliente={clienteCorte} onClose={() => setClienteCorte(null)} onGenerated={cargar} />
       <ModalRevisarCobro cobro={cobroSel} open={cobroSel !== null} onClose={() => setCobroSel(null)} onSuccess={cargar} />
-      <ModalConfigFinanzas open={configOpen} onClose={() => setConfigOpen(false)} />
     </PageWrapper>
   );
 }

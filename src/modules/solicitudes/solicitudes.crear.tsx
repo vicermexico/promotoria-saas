@@ -199,7 +199,6 @@ export const CrearSolicitud = () => {
   const numProductos = productosSeleccionados.length;
   const productosFacturables = Math.min(Math.max(numProductos, pricing.min_products), pricing.max_products);
   const costoBase = productosFacturables * pricing.price_per_product;
-  const productosExtra = Math.max(numProductos - pricing.min_products, 0);
 
   const costoPreguntas = productosSeleccionados.reduce(
     (sum, prod) => sum + prod.preguntas.reduce((s, q) => s + (q.dc_precio || 0), 0),
@@ -358,32 +357,28 @@ export const CrearSolicitud = () => {
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-4">
-                  <span className="text-primary-foreground/70">Costo base (hasta {pricing.min_products} productos):</span>
-                  <span className="font-medium tabular-nums">${(pricing.price_per_product * pricing.min_products).toFixed(2)}</span>
+                  <span className="text-primary-foreground/70">{pricing.max_products <= pricing.min_products ? "Costo de la solicitud (productos ilimitados)" : `Costo base (hasta ${pricing.min_products} producto${pricing.min_products !== 1 ? "s" : ""})`}:</span>
+                  <span className="font-medium tabular-nums">${(pricing.max_products <= pricing.min_products ? costoBase : Math.min(productosFacturables, pricing.min_products) * pricing.price_per_product).toFixed(2)}</span>
                 </div>
-                {costoBase > pricing.price_per_product * pricing.min_products && (
-                  <div className="flex justify-between gap-4 text-primary-foreground/90">
-                    <span>Productos extra ({productosExtra}):</span>
-                    <span className="tabular-nums">+ ${(costoBase - pricing.price_per_product * pricing.min_products).toFixed(2)}</span>
-                  </div>
-                )}
-                {productosExtra > 0 && costoBase >= pricing.price_per_product * pricing.max_products && (
-                  <div className="text-xs text-primary-foreground/70 italic">
-                    Precio base máximo alcanzado (${(pricing.price_per_product * pricing.max_products).toFixed(2)}). Puedes seguir agregando productos sin costo base adicional.
-                  </div>
-                )}
-                {costoPreguntas > 0 && (
+                <div className="pt-2 border-t border-primary-foreground/20 space-y-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary-foreground/70">Adicionales extras</p>
+                  {pricing.max_products > pricing.min_products && (
+                    <div className="flex justify-between gap-4 text-primary-foreground/90">
+                      <span>Productos extra ({Math.max(productosFacturables - pricing.min_products, 0)}):</span>
+                      <span className="tabular-nums">+ ${(Math.max(productosFacturables - pricing.min_products, 0) * pricing.price_per_product).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between gap-4 text-primary-foreground/90">
                     <span>Preguntas extra ({totalPreguntas}):</span>
                     <span className="tabular-nums">+ ${costoPreguntas.toFixed(2)}</span>
                   </div>
-                )}
-                {prepedido && cargoPrepedido > 0 && (
-                  <div className="flex justify-between gap-4 text-primary-foreground/90">
-                    <span>Cargo por Prepedido:</span>
-                    <span className="tabular-nums">+ ${cargoPrepedido.toFixed(2)}</span>
-                  </div>
-                )}
+                  {prepedido && (
+                    <div className="flex justify-between gap-4 text-primary-foreground/90">
+                      <span>Cargo por Prepedido:</span>
+                      <span className="tabular-nums">+ ${cargoPrepedido.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
                 <div className="flex justify-between gap-4 text-lg pt-3 border-t border-primary-foreground/20">
                   <span className="font-bold">Costo Total:</span>
                   <span className="font-bold tabular-nums">${granTotal.toFixed(2)} <span className="text-xs font-semibold">+ IVA</span></span>

@@ -49,7 +49,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         { route: "/pedidos", icon: FileText, label: "Órdenes de visita", show: isAdmin || isNegocio },
         { route: "/tareas", icon: CheckSquare2, label: "Visitas", show: isAdmin || isNegocio },
         { route: "/rechazos", icon: ClipboardCheck, label: "Rechazos por revisar", show: isAdmin },
-        { route: "/logistica", icon: Map, label: "Logística", show: isAdmin || isNegocio },
+        { route: "/logistica", icon: Map, label: "Logística", show: isNegocio },
         { route: "/mis-prepedidos", icon: ClipboardCheck, label: "Mis Pedidos", show: isNegocio },
         { route: "/choferes", icon: Truck, label: "Choferes", show: isNegocio },
       ],
@@ -58,7 +58,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       label: "Catálogo",
       items: [
         { route: "/clientes", icon: UsersRound, label: "Clientes", show: isAdmin },
-        { route: "/recargas", icon: CreditCard, label: "Recargas de saldo", show: isAdmin },
         { route: "/promotores", icon: Users, label: "Promotores", show: isAdmin },
         { route: "/productos", icon: Package, label: "Productos", show: isAdmin || isNegocio },
         { route: "/establecimientos", icon: Store, label: "Establecimientos", show: isAdmin },
@@ -93,6 +92,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       label: "Finanzas",
       items: [
         { route: "/finanzas/cobro-clientes", icon: HandCoins, label: "Cobro a clientes", show: isAdmin },
+        { route: "/recargas", icon: CreditCard, label: "Ingresos de recargas de saldo", show: isAdmin },
         { route: "/finanzas/pago-promotores", icon: Banknote, label: "Pago a promotores", show: isAdmin },
         { route: "/finanzas/pago-activadores", icon: UserPlus, label: "Pago a activadores", show: isAdmin },
         { route: "/finanzas/pago-choferes", icon: Truck, label: "Pago a choferes", show: isAdmin },

@@ -58,23 +58,12 @@ const inputCls =
 
 export default function RecargasMaster() {
   const user = useAuthStore((s) => s.user)
-  const [banco, setBanco] = useState<Banco>(BANCO_VACIO)
-  const [guardandoBanco, setGuardandoBanco] = useState(false)
   const [estado, setEstado] = useState<number>(1)
   const [lista, setLista] = useState<Recarga[]>([])
   const [cargando, setCargando] = useState(false)
   const [rechazandoId, setRechazandoId] = useState<number | null>(null)
   const [motivo, setMotivo] = useState('')
   const [trabajandoId, setTrabajandoId] = useState<number | null>(null)
-
-  const cargarBanco = useCallback(async () => {
-    try {
-      const r = await api.get<ApiResponse<Banco>>('/balance/bank-info')
-      if (r.ok) setBanco({ ...BANCO_VACIO, ...r.data })
-    } catch {
-      toast.error('No se pudieron cargar los datos bancarios')
-    }
-  }, [])
 
   const cargarLista = useCallback(async () => {
     if (estado === 0) return
@@ -91,28 +80,11 @@ export default function RecargasMaster() {
   }, [estado])
 
   useEffect(() => {
-    cargarBanco()
-  }, [cargarBanco])
-
-  useEffect(() => {
     cargarLista()
   }, [cargarLista])
 
   if (user?.i_rol !== 1) {
     return <div className="p-6 text-sm text-muted-foreground">Esta pantalla es solo para el administrador principal.</div>
-  }
-
-  const guardarBanco = async () => {
-    setGuardandoBanco(true)
-    try {
-      const r = await api.put<ApiResponse<Banco>>('/balance/bank-info', banco)
-      if (r.ok) toast.success('Datos bancarios guardados')
-      else toast.error(r.message || 'No se pudo guardar')
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo guardar')
-    } finally {
-      setGuardandoBanco(false)
-    }
   }
 
   const aprobar = async (r: Recarga) => {
@@ -158,46 +130,12 @@ export default function RecargasMaster() {
     }
   }
 
-  const campo = (k: keyof Banco, label: string, ph?: string) => (
-    <label className="block space-y-1">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <input className={inputCls} value={banco[k]} placeholder={ph} onChange={(e) => setBanco({ ...banco, [k]: e.target.value })} />
-    </label>
-  )
-
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-semibold">Recargas de saldo</h1>
-        <p className="text-sm text-muted-foreground">Cuenta donde depositan los clientes sin crédito y comprobantes por aprobar.</p>
+        <h1 className="text-2xl font-semibold">Ingresos de recargas de saldo</h1>
+        <p className="text-sm text-muted-foreground">Comprobantes de las recargas que mandan los clientes sin crédito, por aprobar. La cuenta donde depositan se cambia en Configurar app → Cuentas de pago.</p>
       </div>
-
-      <section className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <h2 className="font-medium">Datos para depositar</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {campo('bank', 'Banco', 'Ej. BBVA')}
-          {campo('holder', 'Titular de la cuenta')}
-          {campo('clabe', 'CLABE interbancaria')}
-          {campo('account', 'Número de cuenta o tarjeta (opcional)')}
-        </div>
-        <label className="block space-y-1">
-          <span className="text-xs text-muted-foreground">Instrucciones (opcional)</span>
-          <textarea
-            className={inputCls}
-            rows={2}
-            value={banco.instructions}
-            placeholder="Ej. Pon tu nombre de cliente en el concepto"
-            onChange={(e) => setBanco({ ...banco, instructions: e.target.value })}
-          />
-        </label>
-        <button
-          onClick={guardarBanco}
-          disabled={guardandoBanco}
-          className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-60"
-        >
-          {guardandoBanco ? 'Guardando…' : 'Guardar datos bancarios'}
-        </button>
-      </section>
 
       <section className="space-y-3">
         <div className="flex gap-2">
