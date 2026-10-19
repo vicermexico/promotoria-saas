@@ -355,6 +355,7 @@ export const PROMOTER_PAYMENT_STATUS_LABEL: Record<PromoterPaymentStatusId, stri
 export interface PromoterPayment {
   id_payment: number;
   id_promoter: number;
+  promoter_name?: string | null;
   vc_folio: string | null;
   dt_start: string;
   dt_end: string;
@@ -386,6 +387,15 @@ export const previewPromoterPayments = (payload: GeneratePromoterPaymentsPayload
     `/finances/promoter-payments/preview`,
     payload
   );
+
+export interface PendingPromoterPayments {
+  total: number;
+  promoters: Array<{ id_promoter: number; name: string; phone: string | null; tasks: number; f_total: number; has_account: boolean }>;
+}
+
+// Lo que se le debe hoy a cada promotor y todavia no entra en ningun corte.
+export const getPendingPromoterPayments = () =>
+  api.get<ApiResponse<PendingPromoterPayments>>(`/finances/promoter-payments/pending`);
 
 export const generatePromoterPayments = (payload: GeneratePromoterPaymentsPayload) =>
   api.post<ApiResponse<unknown>>(`/finances/promoter-payments`, payload);

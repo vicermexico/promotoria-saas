@@ -1,4 +1,7 @@
 import { api, ApiResponse } from "@/lib";
+import { useAuthStore } from "@/stores";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 import type { InvoiceListMeta, ActivatorPaymentStatusId } from "./finanzas";
 
 export interface DriverActivatorPayment {
@@ -48,14 +51,31 @@ export interface DriverActivatorPaymentDetail extends DriverActivatorPayment {
   payment_tasks: Array<{ id: number; id_task: number; id_promoter: number; promoter_name: string | null; f_amount: string }>;
   driver: { id_driver: number; name: string; phone: string; email: string | null } | null;
   bank_account: { id: number; account_holder_name: string; account_type: "CLABE" | "CARD"; bank_name: string; clabe: string | null; card_number: string | null } | null;
+  evidences: Array<{ id_asset: number; vc_url: string; vc_mime: string | null }>;
   logs: Array<{ id_payment_log: number; vc_log: string; dt_register: string }>;
 }
 
 export const getDriverActivatorPaymentById = (id_payment: number) =>
   api.get<ApiResponse<DriverActivatorPaymentDetail>>(`/finances/driver-activator-payments/${id_payment}`);
 
-export const submitDriverActivatorPayment = (id_payment: number, payload: { dt_payment: string; vc_notes?: string }) =>
-  api.patch<ApiResponse<DriverActivatorPayment>>(`/finances/driver-activator-payments/${id_payment}/payment`, payload);
+// PATCH con multipart (lleva el comprobante); api.upload solo hace POST, por eso el fetch directo.
+export const submitDriverActivatorPayment = async (id_payment: number, payload: { dt_payment: string; vc_notes?: string; evidence: File }) => {
+  const fd = new FormData();
+  fd.append("dt_payment", payload.dt_payment);
+  if (payload.vc_notes) fd.append("vc_notes", payload.vc_notes);
+  fd.append("evidence", payload.evidence);
+  const token = useAuthStore.getState().token;
+  const response = await fetch(`${API_URL}/finances/driver-activator-payments/${id_payment}/payment`, {
+    method: "PATCH",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: fd,
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || `Error ${response.status}`);
+  }
+  return response.json() as Promise<ApiResponse<DriverActivatorPayment>>;
+};
 
 export const cancelDriverActivatorPayment = (id_payment: number) =>
   api.patch<ApiResponse<DriverActivatorPayment>>(`/finances/driver-activator-payments/${id_payment}/status`, { action: "cancel" });
@@ -63,3 +83,12 @@ export const cancelDriverActivatorPayment = (id_payment: number) =>
 // Numero completo de la cuenta del chofer, solo para hacer el deposito. Cada consulta queda en bitacora.
 export const revealDriverBankAccount = (id_account: number) =>
   api.get<ApiResponse<{ id: number; id_driver: number; clabe: string | null; card_number: string | null }>>(`/finances/driver-activator-payments/bank-accounts/${id_account}/reveal`);
+
+export interface PendingDriverCommissions {
+  total: number;
+  drivers: Array<{ id_driver: number; name: string; phone: string | null; tasks: number; f_total: number; has_account: boolean }>;
+}
+
+// Lo que se le debe hoy a cada chofer y todavia no entra en ningun corte.
+export const getPendingDriverCommissions = () =>
+  api.get<ApiResponse<PendingDriverCommissions>>(`/finances/driver-activator-payments/pending`);
