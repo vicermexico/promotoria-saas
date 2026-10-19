@@ -217,6 +217,15 @@ export const previewCharges = (payload: GenerateChargesPayload) =>
     payload
   );
 
+export interface PendingClientCharges {
+  total: number;
+  clients: Array<{ id_client: number; name: string; orders: number; tasks: number; f_total: number }>;
+}
+
+// Lo que ya se puede cobrar a cada cliente y todavia no entra en ningun corte.
+export const getPendingClientCharges = () =>
+  api.get<ApiResponse<PendingClientCharges>>(`/finances/client-charges/pending`);
+
 export const generateCharges = (payload: GenerateChargesPayload) =>
   api.post<ApiResponse<unknown>>(`/finances/client-charges`, payload);
 
@@ -266,6 +275,7 @@ export const ACTIVATOR_PAYMENT_STATUS_LABEL: Record<ActivatorPaymentStatusId, st
 export interface ActivatorPayment {
   id_payment: number;
   id_activator: number;
+  activator_name?: string | null;
   vc_folio: string | null;
   dt_start: string;
   dt_end: string;
@@ -291,6 +301,15 @@ export const previewActivatorPayments = (payload: GenerateActivatorPaymentsPaylo
     `/finances/activator-payments/preview`,
     payload
   );
+
+export interface PendingActivatorPayments {
+  total: number;
+  activators: Array<{ id_activator: number; name: string; phone: string | null; tasks: number; f_total: number; has_account: boolean }>;
+}
+
+// Lo que se le debe hoy a cada activador y todavia no entra en ningun corte.
+export const getPendingActivatorPayments = () =>
+  api.get<ApiResponse<PendingActivatorPayments>>(`/finances/activator-payments/pending`);
 
 export const generateActivatorPayments = (payload: GenerateActivatorPaymentsPayload) =>
   api.post<ApiResponse<unknown>>(`/finances/activator-payments`, payload);
@@ -318,6 +337,7 @@ export interface ActivatorPaymentDetail extends ActivatorPayment {
     phone: string;
     promoter_bank_accounts: Array<{ id: number; bank_name: string; account_holder_name: string; clabe?: string | null; card_number?: string | null }>;
   };
+  evidences?: Array<{ id_asset: number; vc_url: string; vc_mime?: string | null }>;
   logs: Array<{ id_payment_log: number; vc_log: string; dt_register: string }>;
 }
 
@@ -328,10 +348,28 @@ export interface SubmitActivatorPaymentPayload {
   dt_payment: string;
   id_bank_account?: number;
   vc_notes?: string;
+  evidence: File;
 }
 
-export const submitActivatorPayment = (id_payment: number, payload: SubmitActivatorPaymentPayload) =>
-  api.patch<ApiResponse<ActivatorPayment>>(`/finances/activator-payments/${id_payment}/payment`, payload);
+// PATCH con multipart (lleva el comprobante); api.upload solo hace POST, por eso el fetch directo.
+export const submitActivatorPayment = async (id_payment: number, payload: SubmitActivatorPaymentPayload) => {
+  const fd = new FormData();
+  fd.append("dt_payment", payload.dt_payment);
+  if (payload.id_bank_account) fd.append("id_bank_account", String(payload.id_bank_account));
+  if (payload.vc_notes) fd.append("vc_notes", payload.vc_notes);
+  fd.append("evidence", payload.evidence);
+  const token = useAuthStore.getState().token;
+  const response = await fetch(`${API_URL}/finances/activator-payments/${id_payment}/payment`, {
+    method: "PATCH",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: fd,
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || `Error ${response.status}`);
+  }
+  return response.json() as Promise<ApiResponse<ActivatorPayment>>;
+};
 
 export const cancelActivatorPayment = (id_payment: number) =>
   api.patch<ApiResponse<ActivatorPayment>>(`/finances/activator-payments/${id_payment}/status`, { action: "cancel" });

@@ -15,15 +15,23 @@ interface Props {
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
 
-const hoyLocal = () => {
+// Hoy todavia no termina (pueden entrar mas visitas): el corte llega como maximo hasta ayer.
+const ayerLocal = () => {
   const d = new Date();
+  d.setDate(d.getDate() - 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const etiquetaAyer = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString("es-MX", { day: "numeric", month: "long" });
 };
 
 export function ModalCorteChofer({ chofer, onClose, onGenerated }: Props) {
   const [modo, setModo] = useState<"hoy" | "fechas">("hoy");
   const [dtStart, setDtStart] = useState("");
-  const [dtEnd, setDtEnd] = useState(hoyLocal());
+  const [dtEnd, setDtEnd] = useState(ayerLocal());
   const [calculo, setCalculo] = useState<{ total: number; tareas: number } | null>(null);
   const [buscando, setBuscando] = useState(false);
   const [generando, setGenerando] = useState(false);
@@ -31,17 +39,21 @@ export function ModalCorteChofer({ chofer, onClose, onGenerated }: Props) {
   useEffect(() => {
     setModo("hoy");
     setDtStart("");
-    setDtEnd(hoyLocal());
+    setDtEnd(ayerLocal());
     setCalculo(null);
   }, [chofer]);
 
-  const rango = () => (modo === "hoy" ? { dt_start: "2000-01-01", dt_end: hoyLocal() } : { dt_start: dtStart, dt_end: dtEnd });
+  const rango = () => (modo === "hoy" ? { dt_start: "2000-01-01", dt_end: ayerLocal() } : { dt_start: dtStart, dt_end: dtEnd });
 
   const calcular = async () => {
     if (!chofer) return;
     const r = rango();
     if (!r.dt_start || !r.dt_end) {
       toast.error("Indica las dos fechas");
+      return;
+    }
+    if (r.dt_end > ayerLocal()) {
+      toast.error("Solo se puede hacer el corte hasta ayer: hoy todavía no termina");
       return;
     }
     setBuscando(true);
@@ -99,7 +111,7 @@ export function ModalCorteChofer({ chofer, onClose, onGenerated }: Props) {
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="radio" checked={modo === "hoy"} onChange={() => setModo("hoy")} />
-            Todo lo pendiente hasta hoy
+            Todo lo pendiente hasta ayer ({etiquetaAyer()})
           </label>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="radio" checked={modo === "fechas"} onChange={() => setModo("fechas")} />
@@ -116,7 +128,7 @@ export function ModalCorteChofer({ chofer, onClose, onGenerated }: Props) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="corte-hasta">Hasta</Label>
-                <Input id="corte-hasta" type="date" value={dtEnd} onChange={(e) => setDtEnd(e.target.value)} />
+                <Input id="corte-hasta" type="date" max={ayerLocal()} value={dtEnd} onChange={(e) => setDtEnd(e.target.value)} />
               </div>
             </div>
             <Button variant="outline" onClick={calcular} disabled={buscando} className="w-full">

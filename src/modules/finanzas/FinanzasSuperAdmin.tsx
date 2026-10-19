@@ -1,14 +1,17 @@
 import { toast } from "sonner"
 import { useEffect, useState, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Clock, AlertCircle, Loader2, Banknote, Settings, Plus, Receipt, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Clock, AlertCircle, Loader2, Banknote, Settings, Plus, Receipt, AlertTriangle, CheckCircle2, FileText } from "lucide-react"
 
-import { ModalRevisarCobro, ModalConfigFinanzas, ModalGenerarCorte } from "./components"
+import { ModalRevisarCobro, ModalConfigFinanzas } from "./components"
+import { ModalCorteCliente } from "./components/ModalCorteCliente"
 import { Button, DataTable, PageWrapper, PageHeader, StatCard, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components"
 import { getCLientsList } from "@/Fetch/clientes"
 import {
   getAllInvoices,
+  getPendingClientCharges,
   ClientInvoice,
+  PendingClientCharges,
   InvoiceStatusId,
   INVOICE_STATUS,
   INVOICE_STATUS_LABEL,
@@ -50,11 +53,11 @@ export default function FinanzasSuperAdmin() {
   const [loading, setLoading] = useState(true);
   const [clientes, setClientes] = useState<ClienteOpcion[]>([]);
   const [clienteFiltro, setClienteFiltro] = useState<string>("todos");
-  const [estadoFiltro, setEstadoFiltro] = useState<"todas" | "por_validar" | "vencidas" | "nos_deben" | "pagadas">("todas");
+  const [pendientes, setPendientes] = useState<PendingClientCharges>({ total: 0, clients: [] });
+  const [clienteCorte, setClienteCorte] = useState<PendingClientCharges["clients"][number] | null>(null);
 
   const [cobroSel, setCobroSel] = useState<ClientInvoice | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
-  const [generarOpen, setGenerarOpen] = useState(false);
 
   useEffect(() => {
     getCLientsList()
@@ -66,8 +69,12 @@ export default function FinanzasSuperAdmin() {
     setLoading(true);
     try {
       const filtro = clienteFiltro !== "todos" ? { id_client: Number(clienteFiltro) } : {};
-      const res = await getAllInvoices({ limit: 100, ...filtro });
+      const [res, pend] = await Promise.all([
+        getAllInvoices({ limit: 100, ...filtro }),
+        getPendingClientCharges().catch(() => null),
+      ]);
       if (res.ok) setFacturas(res.data.data);
+      if (pend?.ok) setPendientes(pend.data);
     } catch {
       toast.error("Error al cargar las facturas");
     } finally {
@@ -77,36 +84,33 @@ export default function FinanzasSuperAdmin() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // El filtro de cliente ya viene aplicado desde el servidor (arriba); el de
-  // estado usa las mismas 4 categorias que las tarjetas de arriba (y son
-  // excluyentes entre si: "Nos deben" no cuenta las que ya estan vencidas),
-  // y de este arreglo final salen tanto la tabla como los 4 totales -- asi
-  // los totales siempre reflejan exactamente lo que se esta viendo con los
-  // filtros puestos.
+  // "Nos deben" no cuenta las que ya estan vencidas (son categorias excluyentes).
   const esNosDeben = (f: ClientInvoice) =>
     (f.id_status === INVOICE_STATUS.PENDIENTE_PAGO || f.id_status === INVOICE_STATUS.OBSERVADO) && !isInvoiceOverdue(f);
 
-  const facturasFiltradas = facturas.filter((f) => {
-    if (estadoFiltro === "por_validar") return f.id_status === INVOICE_STATUS.EN_VALIDACION;
-    if (estadoFiltro === "vencidas") return isInvoiceOverdue(f);
-    if (estadoFiltro === "nos_deben") return esNosDeben(f);
-    if (estadoFiltro === "pagadas") return f.id_status === INVOICE_STATUS.PAGADO;
-    return true;
-  });
+  const porCobrar = facturas.filter((f) => f.id_status === INVOICE_STATUS.PENDIENTE_PAGO || f.id_status === INVOICE_STATUS.EN_VALIDACION || f.id_status === INVOICE_STATUS.OBSERVADO);
+  const historial = facturas.filter((f) => f.id_status === INVOICE_STATUS.PAGADO || f.id_status === INVOICE_STATUS.CANCELADO);
 
-  const totalPorCobrar = facturasFiltradas.filter(esNosDeben).reduce((a, f) => a + Number(f.f_amount), 0);
-  const totalEnValidacion = facturasFiltradas.filter((f) => f.id_status === INVOICE_STATUS.EN_VALIDACION).reduce((a, f) => a + Number(f.f_amount), 0);
-  const totalVencido = facturasFiltradas.filter(isInvoiceOverdue).reduce((a, f) => a + Number(f.f_amount), 0);
-  const totalPagado = facturasFiltradas.filter((f) => f.id_status === INVOICE_STATUS.PAGADO).reduce((a, f) => a + Number(f.f_amount), 0);
+  const pendientesVisibles = pendientes.clients.filter((c) => clienteFiltro === "todos" || c.id_client === Number(clienteFiltro));
+  const totalSinCorte = pendientesVisibles.reduce((a, c) => a + c.f_total, 0);
+
+  const totalPorCobrar = facturas.filter(esNosDeben).reduce((a, f) => a + Number(f.f_amount), 0);
+  const totalEnValidacion = facturas.filter((f) => f.id_status === INVOICE_STATUS.EN_VALIDACION).reduce((a, f) => a + Number(f.f_amount), 0);
+  const totalVencido = facturas.filter(isInvoiceOverdue).reduce((a, f) => a + Number(f.f_amount), 0);
+  const totalPagado = facturas.filter((f) => f.id_status === INVOICE_STATUS.PAGADO).reduce((a, f) => a + Number(f.f_amount), 0);
 
   const nombreCliente = (id_client: number) => clientes.find((c) => c.id_client === id_client)?.name ?? `Cliente #${id_client}`;
 
-  const columnasFacturas: ColumnDef<ClientInvoice>[] = [
-    { accessorKey: "id_status", header: "Estado", cell: ({ row }) => <BadgeInvoice invoice={row.original} /> },
+  const columnasBase: ColumnDef<ClientInvoice>[] = [
+    { accessorKey: "vc_folio", header: "Folio", cell: ({ row }) => <span className="font-bold text-muted-foreground">{row.original.vc_folio ?? `#${row.original.id}`}</span> },
     { id: "cliente", header: "Cliente", cell: ({ row }) => <span className="font-medium">{nombreCliente(row.original.charge.id_client)}</span> },
-    { id: "pedido", header: "Orden", cell: ({ row }) => <span className="text-sm text-muted-foreground">#{row.original.id_order}</span> },
+    { id: "pedido", header: "Pedido", cell: ({ row }) => <span className="text-sm text-muted-foreground">#{row.original.id_order}</span> },
     { accessorKey: "f_amount", header: "Total", cell: ({ row }) => <span className="font-semibold text-foreground">{fmt(Number(row.original.f_amount))}</span> },
     { accessorKey: "dt_register", header: "Emitida", cell: ({ row }) => fmtDate(row.original.dt_register) },
+  ];
+
+  const columnasPorCobrar: ColumnDef<ClientInvoice>[] = [
+    ...columnasBase,
     {
       accessorKey: "dt_due", header: "Vence",
       cell: ({ row }) => {
@@ -114,19 +118,25 @@ export default function FinanzasSuperAdmin() {
         return <span className={vencida ? "text-destructive font-semibold" : ""}>{fmtDate(row.original.dt_due)}</span>;
       },
     },
+    { accessorKey: "id_status", header: "Estado", cell: ({ row }) => <BadgeInvoice invoice={row.original} /> },
     {
       id: "actions", header: "Operaciones",
       cell: ({ row }) => {
         const f = row.original;
-        if (f.id_status !== INVOICE_STATUS.EN_VALIDACION) return <span className="text-xs text-muted-foreground/70">—</span>;
+        if (f.id_status !== INVOICE_STATUS.EN_VALIDACION) return <span className="text-xs text-muted-foreground/70">Esperando pago del cliente</span>;
         return (
-          <Button size="sm" variant="outline" onClick={() => setCobroSel(f)} className="text-info border-info/30 hover:bg-info/10">
-            <Receipt className="w-3 h-3 mr-1" /> Revisar
+          <Button size="sm" onClick={() => setCobroSel(f)} className="bg-success hover:bg-success/90 text-white">
+            <Receipt className="w-3 h-3 mr-1" /> Revisar pago
           </Button>
         );
       },
     },
-    { accessorKey: "vc_folio", header: "Folio", cell: ({ row }) => <span className="font-bold text-muted-foreground">{row.original.vc_folio ?? `#${row.original.id}`}</span> },
+  ];
+
+  const columnasHistorial: ColumnDef<ClientInvoice>[] = [
+    ...columnasBase,
+    { accessorKey: "dt_payment", header: "Fecha de pago", cell: ({ row }) => fmtDate(row.original.dt_payment) },
+    { accessorKey: "id_status", header: "Estado", cell: ({ row }) => <BadgeInvoice invoice={row.original} /> },
   ];
 
   if (loading && facturas.length === 0)
@@ -139,6 +149,8 @@ export default function FinanzasSuperAdmin() {
       </PageWrapper>
     );
 
+  const caja = { backgroundColor: "var(--card-bg)", borderColor: "var(--border)" };
+
   return (
     <PageWrapper>
       <PageHeader
@@ -146,37 +158,21 @@ export default function FinanzasSuperAdmin() {
         subtitle="Gestión de cobros a clientes"
         icon={Banknote}
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setConfigOpen(true)} className="flex items-center gap-2">
-              <Settings size={16} /> Configuración
-            </Button>
-            <Button onClick={() => setGenerarOpen(true)} className="flex items-center gap-2">
-              <Plus size={16} /> Generar corte
-            </Button>
-          </div>
+          <Button variant="outline" onClick={() => setConfigOpen(true)} className="flex items-center gap-2">
+            <Settings size={16} /> Configuración
+          </Button>
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 stagger-children">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 stagger-children">
+        <StatCard title="Por facturar (sin corte)" value={fmt(totalSinCorte)} icon={FileText} accent="#7c3aed" />
         <StatCard title="Por validar" value={fmt(totalEnValidacion)} icon={Clock} accent="#2563eb" />
         <StatCard title="Vencidas" value={fmt(totalVencido)} icon={AlertTriangle} accent="#b91c1c" />
         <StatCard title="Nos deben" value={fmt(totalPorCobrar)} icon={AlertCircle} accent="#dc2626" />
         <StatCard title="Pagadas" value={fmt(totalPagado)} icon={CheckCircle2} accent="#16a34a" />
       </div>
 
-      <div className="flex items-center justify-end flex-wrap gap-3">
-        <Select value={estadoFiltro} onValueChange={(v) => setEstadoFiltro(v as typeof estadoFiltro)}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todos los estados</SelectItem>
-            <SelectItem value="por_validar">Por validar</SelectItem>
-            <SelectItem value="vencidas">Vencidas</SelectItem>
-            <SelectItem value="nos_deben">Nos deben</SelectItem>
-            <SelectItem value="pagadas">Pagadas</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex items-center justify-end">
         <Select value={clienteFiltro} onValueChange={setClienteFiltro}>
           <SelectTrigger className="w-[220px]">
             <SelectValue placeholder="Filtrar por cliente" />
@@ -190,13 +186,61 @@ export default function FinanzasSuperAdmin() {
         </Select>
       </div>
 
-      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--border)" }}>
-        <DataTable columns={columnasFacturas} data={facturasFiltradas} isLoading={loading} emptyMessage="No hay facturas registradas." pagination={{ pageSize: 100 }} />
+      <div className="rounded-xl border overflow-hidden" style={caja}>
+        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+          <p className="font-semibold text-foreground">1. Lo que ya se puede cobrar (aún sin corte)</p>
+          <p className="text-xs text-muted-foreground">Pedidos cerrados con visitas terminadas que todavía no se facturan. Los clientes de prepago no aparecen: ya pagaron al crear el pedido.</p>
+        </div>
+        {pendientesVisibles.length === 0 ? (
+          <p className="text-sm text-muted-foreground px-4 py-6 text-center">No hay nada pendiente de facturar.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="px-4 py-2 font-medium">Cliente</th>
+                <th className="px-4 py-2 font-medium">Pedidos</th>
+                <th className="px-4 py-2 font-medium">Visitas</th>
+                <th className="px-4 py-2 font-medium">Se le cobra</th>
+                <th className="px-4 py-2 font-medium">Operaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendientesVisibles.map((c) => (
+                <tr key={c.id_client} className="border-t" style={{ borderColor: "var(--border)" }}>
+                  <td className="px-4 py-2 font-medium">{c.name}</td>
+                  <td className="px-4 py-2">{c.orders}</td>
+                  <td className="px-4 py-2">{c.tasks}</td>
+                  <td className="px-4 py-2 font-semibold">{fmt(c.f_total)}</td>
+                  <td className="px-4 py-2">
+                    <Button size="sm" onClick={() => setClienteCorte(c)}>
+                      <Plus className="w-3 h-3 mr-1" /> Generar corte
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
+      <div className="rounded-xl border overflow-hidden" style={caja}>
+        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+          <p className="font-semibold text-foreground">2. Facturas por cobrar</p>
+          <p className="text-xs text-muted-foreground">Cortes ya hechos. Cuando el cliente sube su comprobante aparece "Revisar pago"; al aprobarlo pasa a pagadas.</p>
+        </div>
+        <DataTable columns={columnasPorCobrar} data={porCobrar} isLoading={loading} emptyMessage="No hay facturas por cobrar." pagination={{ pageSize: 100 }} />
+      </div>
+
+      <div className="rounded-xl border overflow-hidden" style={caja}>
+        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+          <p className="font-semibold text-foreground">3. Facturas pagadas</p>
+        </div>
+        <DataTable columns={columnasHistorial} data={historial} isLoading={loading} emptyMessage="Todavía no hay facturas pagadas." pagination={{ pageSize: 100 }} />
+      </div>
+
+      <ModalCorteCliente cliente={clienteCorte} onClose={() => setClienteCorte(null)} onGenerated={cargar} />
       <ModalRevisarCobro cobro={cobroSel} open={cobroSel !== null} onClose={() => setCobroSel(null)} onSuccess={cargar} />
       <ModalConfigFinanzas open={configOpen} onClose={() => setConfigOpen(false)} />
-      <ModalGenerarCorte open={generarOpen} onClose={() => setGenerarOpen(false)} onSuccess={cargar} />
     </PageWrapper>
   );
 }
