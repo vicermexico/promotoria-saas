@@ -33,6 +33,9 @@ export const suspendDriver = (id_driver: number) =>
 export const reactivateDriver = (id_driver: number) =>
     api.patch<ApiResponse<DriverDTO>>(`/drivers/${id_driver}/reactivate`, {})
 
+export const notifyDriver = (id_driver: number, body: string) =>
+    api.post<ApiResponse<{ devices: number; sent: number } | null>>(`/drivers/${id_driver}/notify`, { title: 'Mensaje de Promotoría', body })
+
 export interface DriverSalesDTO {
     total_charged: number
     total_pieces: number

@@ -1,11 +1,11 @@
 import { toast } from "sonner"
 import { useEffect, useState } from "react"
-import { Truck, Plus, Phone, Mail, Trash2, Loader2, Ban, RotateCcw, DollarSign, Route as RouteIcon } from "lucide-react"
+import { Truck, Plus, Phone, Mail, Trash2, Loader2, Ban, RotateCcw, DollarSign, Route as RouteIcon, MessageSquare } from "lucide-react"
 
 import { PageWrapper, PageHeader, Button, Card, CardContent, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input, Label, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components"
 import {
   getDrivers, createDriver, deactivateDriver, suspendDriver, reactivateDriver,
-  getDriverSales, getDriverRoutesInRange, DriverDTO, DriverSalesDTO, DriverRouteHistoryDTO,
+  getDriverSales, getDriverRoutesInRange, DriverDTO, DriverSalesDTO, DriverRouteHistoryDTO, notifyDriver,
 } from "@/Fetch/drivers"
 
 const money = (n: number) => `$${n.toFixed(2)}`
@@ -27,6 +27,7 @@ export default function Choferes() {
   const [togglingId, setTogglingId] = useState<number | null>(null)
   const [salesDriver, setSalesDriver] = useState<DriverDTO | null>(null)
   const [routeDriver, setRouteDriver] = useState<DriverDTO | null>(null)
+  const [msgDriver, setMsgDriver] = useState<DriverDTO | null>(null)
 
   const fetchDrivers = async () => {
     setLoading(true)
@@ -185,6 +186,9 @@ export default function Choferes() {
                   >
                     <Trash2 size={14} className="mr-1.5" /> Eliminar
                   </Button>
+                  <Button variant="outline" size="sm" className="col-span-2" onClick={() => setMsgDriver(driver)}>
+                    <MessageSquare size={14} className="mr-1.5" /> Mensaje
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -253,6 +257,9 @@ export default function Choferes() {
       )}
       {routeDriver && (
         <DriverRouteDialog driver={routeDriver} onClose={() => setRouteDriver(null)} />
+      )}
+      {msgDriver && (
+        <MensajeChoferDialog driver={msgDriver} onClose={() => setMsgDriver(null)} />
       )}
     </PageWrapper>
   )
@@ -407,6 +414,63 @@ function DriverRouteDialog({ driver, onClose }: { driver: DriverDTO; onClose: ()
             ))}
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function MensajeChoferDialog({ driver, onClose }: { driver: DriverDTO; onClose: () => void }) {
+  const [text, setText] = useState("")
+  const [sending, setSending] = useState(false)
+
+  const send = async () => {
+    if (!text.trim()) {
+      toast.error("Escribe el mensaje")
+      return
+    }
+    setSending(true)
+    try {
+      const res: any = await notifyDriver(driver.id_driver, text.trim())
+      const msg: string = res?.message || ""
+      if ((res?.data?.sent ?? 0) > 0 || /enviado/i.test(msg)) {
+        toast.success("Mensaje enviado")
+        onClose()
+      } else {
+        toast.error(msg || "No se pudo entregar el mensaje")
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "No se pudo enviar el mensaje")
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>Mensaje para {driver.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <Label>Escribe tu mensaje</Label>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value.slice(0, 300))}
+            rows={4}
+            placeholder="Ej: Hoy pasa primero por la tienda del centro"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Le llega como notificación a su celular. Solo lo recibe si ya activó las notificaciones. ({text.length}/300)
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} disabled={sending}>Cancelar</Button>
+          <Button onClick={send} disabled={sending}>
+            {sending && <Loader2 size={14} className="mr-2 animate-spin" />}
+            Enviar
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
