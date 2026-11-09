@@ -34,6 +34,7 @@ import { MisPrepedidos } from '@/modules/prepedidos'
 import { Choferes } from '@/modules/choferes'
 import { CrearSolicitud, EditarSolicitud, SolicitudDetalle, SolicitudesList } from '@/modules/solicitudes'
 import ChoferLogin from '@/modules/chofer-panel/ChoferLogin'
+import InstalarApp from '@/modules/InstalarApp'
 import ChoferLayout from '@/modules/chofer-panel/ChoferLayout'
 import RutaMapa from '@/modules/chofer-panel/RutaMapa'
 import MiRuta, { IrAMiRuta } from '@/modules/chofer-panel/MiRuta'
@@ -49,6 +50,7 @@ import Invitar from '@/modules/chofer-panel/Invitar'
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <InstalarApp />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/restore-pwd" element={<RestorePassword />} />

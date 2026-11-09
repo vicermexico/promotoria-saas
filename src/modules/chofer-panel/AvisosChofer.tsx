@@ -12,7 +12,7 @@ import { driverApi, ApiResponse } from '@/lib/driverApi'
  */
 
 const SW_URL = '/sw.js'
-const SW_SCOPE = '/chofer/'
+const SW_SCOPE = '/'
 const OCULTO_KEY = 'avisos-chofer-oculto'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -38,6 +38,11 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 async function registrarServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null
   try {
+    // Limpia el registro viejo (cuando la app era solo del chofer) para no duplicar avisos.
+    const todas = await navigator.serviceWorker.getRegistrations()
+    for (const r of todas) {
+      if (new URL(r.scope).pathname === '/chofer/') await r.unregister()
+    }
     const reg = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE })
     await navigator.serviceWorker.ready
     return reg

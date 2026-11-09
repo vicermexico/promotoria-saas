@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Route as RouteIcon, LogOut, PlayCircle, UserPlus, ArrowLeft, Store } from 'lucide-react'
 
 import { useDriverAuthStore } from '@/stores/driverAuthStore'
@@ -19,17 +19,6 @@ export default function ChoferLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [fotoRota, setFotoRota] = useState(false)
-
-  // La app instalable es solo la del chofer: el manifest se agrega únicamente en estas pantallas.
-  useEffect(() => {
-    const link = document.createElement('link')
-    link.rel = 'manifest'
-    link.href = '/chofer-manifest.json'
-    document.head.appendChild(link)
-    return () => {
-      link.remove()
-    }
-  }, [])
 
   if (!isAuthenticated) {
     return <Navigate to="/chofer/login" replace />
