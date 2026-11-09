@@ -8,6 +8,7 @@ import { NotFound } from '@/modules/not-found'
 import { Maintenance } from '@/modules/maintenance'
 import { Finanzas, FinanzasActivadores, FinanzasPromotores } from '@/modules/finanzas'
 import { ConfigurarApp, VideosIntroduccion } from '@/modules/configuracion'
+import { ConfigurarPortada } from '@/modules/configurar-portada'
 import { FaqAyuda } from '@/modules/faq-ayuda'
 import { DudasCliente } from '@/modules/dudas-cliente/DudasCliente'
 import { Perfil, MiNegocio } from '@/modules/perfil'
@@ -102,6 +103,7 @@ export default function AppRouter() {
           <Route path="finanzas/pago-activadores" element={<FinanzasActivadores />} />
           <Route path="finanzas/gestion-pagos" element={<Finanzas />} />
           <Route path="configurar-app" element={<ConfigurarApp />} />
+          <Route path="configurar-portada" element={<ConfigurarPortada />} />
           <Route path="videos-introduccion" element={<VideosIntroduccion />} />
           <Route path="dudas-preguntas" element={<FaqAyuda />} />
           <Route path="dudas-cliente" element={<DudasCliente />} />
