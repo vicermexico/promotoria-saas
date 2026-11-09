@@ -1,8 +1,8 @@
 import MisEstablecimientos from "@/modules/establecimientos/MisEstablecimientos"
 import Equipo from "@/modules/equipo/Equipo"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
-import { Layout } from "@/layout"
+import { RaizPublica } from "@/modules/landing"
 import { Home } from '@/modules/home'
 import { NotFound } from '@/modules/not-found'
 import { Maintenance } from '@/modules/maintenance'
@@ -11,7 +11,7 @@ import { ConfigurarApp, VideosIntroduccion } from '@/modules/configuracion'
 import { FaqAyuda } from '@/modules/faq-ayuda'
 import { DudasCliente } from '@/modules/dudas-cliente/DudasCliente'
 import { Perfil, MiNegocio } from '@/modules/perfil'
-import { PrivateRoute, Login, RestorePassword, CambiarPasswordObligatorio } from '@/modules/auth'
+import { Login, RestorePassword, CambiarPasswordObligatorio } from '@/modules/auth'
 import { EliminarCuenta } from '@/modules/eliminar-cuenta'
 import { AvisoPrivacidad, Terminos } from '@/modules/legal'
 import { InvitacionPromotor } from '@/modules/invitacion/InvitacionPromotor'
@@ -29,7 +29,6 @@ import Logistica from '@/modules/logistica/Logistica'
 import { MisPrepedidos } from '@/modules/prepedidos'
 import { Choferes } from '@/modules/choferes'
 import { CrearSolicitud, EditarSolicitud, SolicitudDetalle, SolicitudesList } from '@/modules/solicitudes'
-import ChoferLogin from '@/modules/chofer-panel/ChoferLogin'
 import ChoferLayout from '@/modules/chofer-panel/ChoferLayout'
 import RutaMapa from '@/modules/chofer-panel/RutaMapa'
 import RutaListada from '@/modules/chofer-panel/RutaListada'
@@ -51,7 +50,7 @@ export default function AppRouter() {
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/registro" element={<InvitacionPromotor />} />
 
-        <Route path="/chofer/login" element={<ChoferLogin />} />
+        <Route path="/chofer/login" element={<Navigate to="/" replace />} />
         <Route path="/chofer" element={<ChoferLayout />}>
           <Route path="mapa" element={<RutaMapa />} />
           <Route path="lista" element={<RutaListada />} />
@@ -61,12 +60,8 @@ export default function AppRouter() {
           <Route path="perfil" element={<PerfilChofer />} />
         </Route>
 
-        <Route path="/" element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }
-        >
+        {/* "/" sin sesión muestra la portada pública; con sesión (y rutas hijas) sigue igual que antes */}
+        <Route path="/" element={<RaizPublica />}>
           <Route index element={<Home />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="crearCliente" element={<CrearCliente />} />

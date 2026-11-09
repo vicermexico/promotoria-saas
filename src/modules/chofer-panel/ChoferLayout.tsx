@@ -19,12 +19,12 @@ export default function ChoferLayout() {
   const [showRouteSelector, setShowRouteSelector] = useState(false)
 
   if (!isAuthenticated) {
-    return <Navigate to="/chofer/login" replace />
+    return <Navigate to="/" replace />
   }
 
   const handleLogout = () => {
     logout()
-    navigate('/chofer/login')
+    navigate('/')
   }
 
   const showRouteButton = location.pathname === '/chofer/mapa' || location.pathname === '/chofer/lista'

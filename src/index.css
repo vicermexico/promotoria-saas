@@ -367,6 +367,116 @@
 .stagger-children > *:nth-child(7) { animation-delay: 300ms; }
 .stagger-children > *:nth-child(8) { animation-delay: 350ms; }
 
+/* ----------------------------------------------------------------------------
+   Portada pública ("/" sin sesión) — src/modules/landing
+---------------------------------------------------------------------------- */
+:root {
+  --sombra-texto: 0 2px 12px oklch(0.15 0.02 230 / 0.9);
+  --sombra-texto-suave: 0 2px 8px oklch(0.15 0.02 230 / 0.9);
+  --sombra-personaje: drop-shadow(0 6px 8px oklch(0.15 0.02 230 / 0.55))
+    drop-shadow(0 20px 26px oklch(0 0 0 / 0.5));
+}
+
+.sombra-texto {
+  text-shadow: var(--sombra-texto);
+}
+.sombra-texto-suave {
+  text-shadow: var(--sombra-texto-suave);
+}
+
+/* El personaje se desliza desde fuera de la pantalla hasta su lugar (puesto y nombre se animan en Portada.tsx) */
+@keyframes personaje-entra-izq {
+  0% {
+    opacity: 0;
+    transform: translateX(-85vw);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: var(--sombra-personaje);
+  }
+}
+@keyframes personaje-entra-der {
+  0% {
+    opacity: 0;
+    transform: translateX(85vw);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: var(--sombra-personaje);
+  }
+}
+/* El grupo (personaje + puesto + nombre) se retira por su mismo lado */
+@keyframes grupo-sale-izq {
+  to {
+    opacity: 0;
+    transform: translateX(-45vw);
+  }
+}
+@keyframes grupo-sale-der {
+  to {
+    opacity: 0;
+    transform: translateX(45vw);
+  }
+}
+@keyframes grupo-sale-suave {
+  to {
+    opacity: 0;
+  }
+}
+
+.personaje-izq {
+  animation: personaje-entra-izq 1500ms cubic-bezier(0.4, 0.05, 0.2, 1) both;
+  filter: var(--sombra-personaje);
+}
+.personaje-der {
+  animation: personaje-entra-der 1500ms cubic-bezier(0.4, 0.05, 0.2, 1) both;
+  filter: var(--sombra-personaje);
+}
+.grupo-sale-izq {
+  animation: grupo-sale-izq 800ms ease-in both;
+}
+.grupo-sale-der {
+  animation: grupo-sale-der 800ms ease-in both;
+}
+
+/* Secciones bajo la portada: aparecen al bajar la página (componente Revelar) */
+.revelar {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 800ms ease-out var(--retraso, 0ms),
+    transform 800ms ease-out var(--retraso, 0ms);
+}
+.revelar.visto {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personaje-izq,
+  .personaje-der {
+    animation: none;
+  }
+  .grupo-sale-izq,
+  .grupo-sale-der {
+    animation: grupo-sale-suave 800ms ease-in both;
+  }
+  .revelar {
+    transform: none;
+    transition: opacity 600ms ease-out var(--retraso, 0ms);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stagger-children > *,
   .animate-page-in,
