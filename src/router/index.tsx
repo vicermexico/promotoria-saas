@@ -1,18 +1,19 @@
 import MisEstablecimientos from "@/modules/establecimientos/MisEstablecimientos"
 import Equipo from "@/modules/equipo/Equipo"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
-import { Layout } from "@/layout"
+import { RaizPublica } from "@/modules/landing"
 import { Home } from '@/modules/home'
 import { NotFound } from '@/modules/not-found'
 import { Maintenance } from '@/modules/maintenance'
 import { Finanzas, FinanzasActivadores, FinanzasPromotores } from '@/modules/finanzas'
 import FinanzasChoferes from '@/modules/finanzas/FinanzasChoferes'
 import { ConfigurarApp, VideosIntroduccion } from '@/modules/configuracion'
+import { ConfigurarPortada } from '@/modules/configurar-portada'
 import { FaqAyuda } from '@/modules/faq-ayuda'
 import { DudasCliente } from '@/modules/dudas-cliente/DudasCliente'
 import { Perfil, MiNegocio } from '@/modules/perfil'
-import { PrivateRoute, Login, RestorePassword, CambiarPasswordObligatorio } from '@/modules/auth'
+import { Login, RestorePassword, CambiarPasswordObligatorio } from '@/modules/auth'
 import { EliminarCuenta } from '@/modules/eliminar-cuenta'
 import { AvisoPrivacidad, Terminos } from '@/modules/legal'
 import { InvitacionPromotor } from '@/modules/invitacion/InvitacionPromotor'
@@ -33,7 +34,6 @@ import Logistica from '@/modules/logistica/Logistica'
 import { MisPrepedidos } from '@/modules/prepedidos'
 import { Choferes } from '@/modules/choferes'
 import { CrearSolicitud, EditarSolicitud, SolicitudDetalle, SolicitudesList } from '@/modules/solicitudes'
-import ChoferLogin from '@/modules/chofer-panel/ChoferLogin'
 import InstalarApp from '@/modules/InstalarApp'
 import ChoferLayout from '@/modules/chofer-panel/ChoferLayout'
 import RutaMapa from '@/modules/chofer-panel/RutaMapa'
@@ -61,7 +61,7 @@ export default function AppRouter() {
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/registro" element={<InvitacionPromotor />} />
 
-        <Route path="/chofer/login" element={<ChoferLogin />} />
+        <Route path="/chofer/login" element={<Navigate to="/" replace />} />
         <Route path="/chofer" element={<ChoferLayout />}>
           <Route path="ruta" element={<MiRuta />} />
           <Route path="ruta/:id_route" element={<RutaOpciones />} />
@@ -77,12 +77,8 @@ export default function AppRouter() {
           <Route path="perfil" element={<PerfilChofer />} />
         </Route>
 
-        <Route path="/" element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }
-        >
+        {/* "/" sin sesión muestra la portada pública; con sesión (y rutas hijas) sigue igual que antes */}
+        <Route path="/" element={<RaizPublica />}>
           <Route index element={<Home />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="crearCliente" element={<CrearCliente />} />
@@ -127,6 +123,7 @@ export default function AppRouter() {
           <Route path="finanzas/pago-choferes" element={<FinanzasChoferes />} />
           <Route path="finanzas/gestion-pagos" element={<Finanzas />} />
           <Route path="configurar-app" element={<ConfigurarApp />} />
+          <Route path="configurar-portada" element={<ConfigurarPortada />} />
           <Route path="videos-introduccion" element={<VideosIntroduccion />} />
           <Route path="dudas-preguntas" element={<FaqAyuda />} />
           <Route path="dudas-cliente" element={<DudasCliente />} />

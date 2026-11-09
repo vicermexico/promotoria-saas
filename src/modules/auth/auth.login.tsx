@@ -4,10 +4,9 @@ import { useNavigate } from "react-router-dom"
 import { Loader2, ArrowLeft, ScanBarcode, PackageCheck, Route as RouteIcon, Truck } from "lucide-react"
 
 
-import { useAuthStore } from "@/stores"
-import { useDriverAuthStore } from "@/stores/driverAuthStore"
-import { loginUser, checkAdminPhoneExists } from "@/Fetch/login"
-import { driverLogin, checkDriverPhoneExists } from "@/Fetch/driverPanel"
+import { useAccesoLogin } from "./useAccesoLogin"
+import { checkAdminPhoneExists } from "@/Fetch/login"
+import { checkDriverPhoneExists } from "@/Fetch/driverPanel"
 import { getLoginVideo, getWhatsappSoportePromotores } from "@/Fetch/appConfig"
 import { Button, Input } from "@/components"
 import logoMark from "@/assets/isologo_promotoria_N.png"
@@ -23,13 +22,11 @@ const INFO_WHATSAPP_FALLBACK = "5218117105018";
 
 export function Login() {
   const navigate = useNavigate();
-  const authstore = useAuthStore();
-  const driverLoginStore = useDriverAuthStore((s) => s.login);
+  const { acceder, loading } = useAccesoLogin();
   const [step, setStep] = useState<"phone" | "password">("phone");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [checkingPhone, setCheckingPhone] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [supportWhatsapp, setSupportWhatsapp] = useState(INFO_WHATSAPP_FALLBACK);
 
@@ -73,29 +70,7 @@ export function Login() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!phone || !password || loading) return;
-    setLoading(true);
-    try {
-      // Se intenta primero como cliente/master. Si no coincide, se prueba
-      // como chofer (usa telefono en vez de usuario/correo) — asi la
-      // persona no tiene que saber de antemano cual es su tipo de cuenta.
-      const response = await loginUser(phone.trim(), password);
-      authstore.login(response.data.token, response.data.user);
-      navigate(response.data.user.must_change_password ? "/cambiar-password-obligatorio" : "/");
-      return;
-    } catch (adminError) {
-      try {
-        const driverResponse = await driverLogin(phone.trim(), password);
-        driverLoginStore(driverResponse.data.token, driverResponse.data.driver);
-        navigate(driverResponse.data.driver.must_change_password ? "/chofer/nueva-password" : "/chofer/mapa");
-        return;
-      } catch (driverError) {
-        console.error(adminError, driverError);
-        toast.error("Celular o contraseña incorrectos");
-      }
-    } finally {
-      setLoading(false);
-    }
+    await acceder(phone, password);
   };
 
   return (

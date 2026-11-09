@@ -21,12 +21,12 @@ export default function ChoferLayout() {
   const [fotoRota, setFotoRota] = useState(false)
 
   if (!isAuthenticated) {
-    return <Navigate to="/chofer/login" replace />
+    return <Navigate to="/" replace />
   }
 
   const handleLogout = () => {
     logout()
-    navigate('/chofer/login')
+    navigate('/')
   }
 
   const path = location.pathname

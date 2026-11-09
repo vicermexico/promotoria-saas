@@ -123,6 +123,21 @@ export const api = {
     },
 
     /**
+     * Igual que upload pero con PUT (editar un registro reemplazando su archivo)
+     */
+    async uploadPut<T>(endpoint: string, formData: FormData): Promise<T> {
+        const token = useAuthStore.getState().token;
+
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            method: "PUT",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+        });
+
+        return this.handleResponse<T>(response);
+    },
+
+    /**
      * Maneja la respuesta de la API
      */
     async handleResponse<T>(response: Response): Promise<T> {

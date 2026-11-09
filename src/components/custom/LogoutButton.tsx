@@ -13,7 +13,7 @@ export function LogoutButton({ isExpanded = true }: LogoutButtonProps) {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (

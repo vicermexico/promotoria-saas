@@ -19,7 +19,7 @@ export const useAuthCheck = () => {
             } catch(error){
                 console.error("Error validando la sesión:", error);
                 logout();
-                navigate('/login');
+                navigate('/');
             }
         }
 

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Store, ChevronLeft, ChevronRight, HomeIcon, ClipboardList, ClipboardCheck, UsersRound, Users, Package, MessageCircleQuestion, Receipt, FileText, Banknote, UserCircle, Building2, CheckSquare2, BarChart3, HandCoins, CreditCard, UserPlus, Settings, Map, Truck, Clapperboard, HelpCircle, LucideIcon } from "lucide-react"
+import { Store, ChevronLeft, ChevronRight, HomeIcon, ClipboardList, ClipboardCheck, UsersRound, Users, Package, MessageCircleQuestion, Receipt, FileText, Banknote, UserCircle, Building2, CheckSquare2, BarChart3, HandCoins, CreditCard, UserPlus, Settings, Map, Truck, Clapperboard, HelpCircle, PanelTop, LucideIcon } from "lucide-react"
 
 
 import { cn } from "@/lib"
@@ -82,6 +82,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       label: "Sistema",
       items: [
         { route: "/configurar-app", icon: Settings, label: "Configurar app", show: isAdmin },
+        { route: "/configurar-portada", icon: PanelTop, label: "Configurar portada", show: isAdmin },
         { route: "/videos-introduccion", icon: Clapperboard, label: "Videos de introducción", show: isAdmin },
         { route: "/dudas-preguntas", icon: HelpCircle, label: "Dudas del promotor", show: isAdmin },
         { route: "/dudas-cliente", icon: HelpCircle, label: "Dudas del cliente", show: isAdmin },
