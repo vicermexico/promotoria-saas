@@ -2,11 +2,13 @@ import { Loader2, PanelTop } from "lucide-react"
 import { Navigate } from "react-router-dom"
 
 import { useAuthStore } from "@/stores"
-import { PageWrapper, PageHeader, Card, CardContent } from "@/components"
+import { PageWrapper, PageHeader } from "@/components"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useInicio } from "./useInicio"
 import SeccionFondos from "./SeccionFondos"
 import SeccionGeneral from "./SeccionGeneral"
+import SeccionPersonajes from "./SeccionPersonajes"
+import SeccionClientes from "./SeccionClientes"
 
 export default function ConfigurarPortada() {
   const user = useAuthStore((s) => s.user)
@@ -35,19 +37,11 @@ export default function ConfigurarPortada() {
           </TabsList>
 
           <TabsContent value="fondos"><SeccionFondos fondos={datos.fondos} onChanged={recargar} /></TabsContent>
-          <TabsContent value="personajes"><Pronto nombre="Personajes" /></TabsContent>
-          <TabsContent value="clientes"><Pronto nombre="Clientes" /></TabsContent>
+          <TabsContent value="personajes"><SeccionPersonajes personajes={datos.personajes} onChanged={recargar} /></TabsContent>
+          <TabsContent value="clientes"><SeccionClientes clientes={datos.clientes} onChanged={recargar} /></TabsContent>
           <TabsContent value="general"><SeccionGeneral config={datos.config} onChanged={recargar} /></TabsContent>
         </Tabs>
       )}
     </PageWrapper>
-  )
-}
-
-function Pronto({ nombre }: { nombre: string }) {
-  return (
-    <Card className="mt-4"><CardContent className="py-10 text-center text-sm text-muted-foreground">
-      La sección {nombre} se agrega en el siguiente paso.
-    </CardContent></Card>
   )
 }
