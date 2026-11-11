@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Volume2 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { esVideoPersonaje, type Fondo, type Personaje } from "../tipos";
 import { VideoPersonaje } from "./VideoPersonaje";
@@ -189,7 +190,13 @@ function FotoPersonaje({ personaje, lado }: { personaje: Personaje; lado: "izq" 
   );
 }
 
-function Personajes({ personajes }: { personajes: Personaje[] }) {
+function Personajes({
+  personajes,
+  alNecesitarSonido,
+}: {
+  personajes: Personaje[];
+  alNecesitarSonido: (activar: (() => void) | null) => void;
+}) {
   const total = personajes.length;
   const [indice, setIndice] = useState(-1); // -1: todavía no entra ninguno
   const [saliendo, setSaliendo] = useState(false);
@@ -238,7 +245,12 @@ function Personajes({ personajes }: { personajes: Personaje[] }) {
         className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-700 [clip-path:inset(0_0_-6rem_0)]"
         style={{ opacity: saliendo ? 0 : 1 }}
       >
-        <VideoPersonaje url={personaje.url} sensibilidad={sensibilidadDeUrl(personaje.url)} onEnded={() => avanzarVideo.current()} />
+        <VideoPersonaje
+          url={personaje.url}
+          sensibilidad={sensibilidadDeUrl(personaje.url)}
+          onEnded={() => avanzarVideo.current()}
+          alNecesitarSonido={alNecesitarSonido}
+        />
       </div>
     );
   }
@@ -302,6 +314,8 @@ export function Portada({
 }) {
   // La tarjeta de entrar aparece enseguida, con un fundido suave; no espera a los personajes
   const [tarjeta, setTarjeta] = useState(false);
+  // Si el video no pudo empezar con sonido, aquí queda la función que lo activa (el botón sale abajo del título)
+  const [activarSonido, setActivarSonido] = useState<(() => void) | null>(null);
   useEffect(() => {
     const t = setTimeout(() => setTarjeta(true), 150);
     return () => clearTimeout(t);
@@ -335,9 +349,19 @@ export function Portada({
       <div className="absolute left-1/2 top-[15rem] z-20 sm:top-[9.5rem] flex w-full -translate-x-1/2 flex-col items-center gap-3 px-4 lg:bottom-[5dvh] lg:top-auto">
         <img src={logoBlanco} alt="Promotoria Digital" className="h-10 w-auto lg:h-14" />
         {encabezado}
+        {activarSonido && (
+          <button
+            type="button"
+            onClick={() => activarSonido()}
+            className="flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-black/75"
+          >
+            <Volume2 className="h-4 w-4" aria-hidden="true" />
+            Activar sonido
+          </button>
+        )}
       </div>
 
-      <Personajes personajes={personajes} />
+      <Personajes personajes={personajes} alNecesitarSonido={(f) => setActivarSonido(() => f)} />
     </section>
   );
 }

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Volume2 } from "lucide-react";
 import { aplicarChroma } from "../chromaKey";
 
 type ConCuadros = HTMLVideoElement & {
@@ -18,11 +17,14 @@ export function VideoPersonaje({
   modo = "portada",
   sensibilidad,
   onEnded,
+  alNecesitarSonido,
 }: {
   url: string;
   modo?: "portada" | "vista";
   sensibilidad: number; // 0 = no quitar el verde
   onEnded?: () => void;
+  // Si el navegador no deja empezar con sonido, avisa con la función que lo activa (o null cuando ya no hace falta)
+  alNecesitarSonido?: (activar: (() => void) | null) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,7 +33,8 @@ export function VideoPersonaje({
   const sensRef = useRef(sensibilidad);
   sensRef.current = sensibilidad; // se puede mover en vivo sin reiniciar el video
   const [aspecto, setAspecto] = useState(16 / 9);
-  const [sinSonido, setSinSonido] = useState(false);
+  const avisoRef = useRef(alNecesitarSonido);
+  avisoRef.current = alNecesitarSonido;
 
   useEffect(() => {
     const v = videoRef.current as ConCuadros | null;
@@ -81,21 +84,32 @@ export function VideoPersonaje({
 
     // Con sonido si el navegador lo deja; si no, mudo y se activa con el primer toque o con el botón
     const vista = modo === "vista";
+    // Quitar el silencio solo funciona dentro de un toque o clic ya completado; si no, el navegador pausa el video.
+    // Por eso se escucha pointerup/click (no pointerdown) y después se vuelve a dar play por si se detuvo.
+    const activar = () => {
+      v.muted = false;
+      v.play().catch(() => undefined);
+      avisoRef.current?.(null);
+      quitarEscuchas();
+    };
+    const destapar = () => {
+      if (v.muted && !vista) activar();
+    };
+    const quitarEscuchas = () => {
+      window.removeEventListener("pointerup", destapar);
+      window.removeEventListener("click", destapar);
+      window.removeEventListener("keydown", destapar);
+    };
     v.muted = vista;
     v.play().catch(() => {
       if (vista) return;
       v.muted = true;
-      setSinSonido(true);
+      avisoRef.current?.(activar);
+      window.addEventListener("pointerup", destapar);
+      window.addEventListener("click", destapar);
+      window.addEventListener("keydown", destapar);
       v.play().catch(() => undefined);
     });
-    const destapar = () => {
-      if (v.muted && !vista) {
-        v.muted = false;
-        setSinSonido(false);
-      }
-    };
-    window.addEventListener("pointerdown", destapar, { once: true });
-    window.addEventListener("keydown", destapar, { once: true });
 
     siguiente();
     return () => {
@@ -104,18 +118,11 @@ export function VideoPersonaje({
       v.cancelVideoFrameCallback?.(vfc);
       v.removeEventListener("loadedmetadata", alMeta);
       v.removeEventListener("ended", alTerminar);
-      window.removeEventListener("pointerdown", destapar);
-      window.removeEventListener("keydown", destapar);
+      quitarEscuchas();
+      avisoRef.current?.(null);
       v.pause();
     };
   }, [url, modo]);
-
-  const activarSonido = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = false;
-    setSinSonido(false);
-  };
 
   const video = (
     <video
@@ -150,16 +157,6 @@ export function VideoPersonaje({
         role="img"
         aria-label="Personaje"
       />
-      {sinSonido && (
-        <button
-          type="button"
-          onClick={activarSonido}
-          className="pointer-events-auto absolute bottom-12 right-3 z-20 lg:bottom-16 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-black/75"
-        >
-          <Volume2 className="h-4 w-4" aria-hidden="true" />
-          Activar sonido
-        </button>
-      )}
     </div>
   );
 }
