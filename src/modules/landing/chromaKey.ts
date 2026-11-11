@@ -16,3 +16,12 @@ export function aplicarChroma(px: Uint8ClampedArray, sensibilidad: number) {
 }
 
 export const SENSIBILIDAD_VIDEO = 60
+
+// La fuerza del recorte de un video se guarda en el nombre del archivo ("personaje-f45.mp4"),
+// así no hace falta tocar la base de datos. f0 = no quitar el verde. Sin marca = valor normal.
+export function sensibilidadDeUrl(url: string): number {
+  const m = /-f(\d{1,3})\.(mp4|webm|mov|m4v)$/i.exec(url.split("?")[0])
+  return m ? Math.min(120, Number(m[1])) : SENSIBILIDAD_VIDEO
+}
+export const nombreArchivoVideo = (extension: string, sensibilidad: number) =>
+  `personaje-f${Math.round(sensibilidad)}.${extension}`

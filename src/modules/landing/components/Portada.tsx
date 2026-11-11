@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { esVideoPersonaje, type Fondo, type Personaje } from "../tipos";
 import { VideoPersonaje } from "./VideoPersonaje";
+import { sensibilidadDeUrl } from "../chromaKey";
 import logoBlanco from "@/assets/promotorialogotipo_principalblanco.png";
 
 // La portada, en este orden: sale el fondo → entra el personaje → aparece su PUESTO en grande
@@ -234,10 +235,10 @@ function Personajes({ personajes }: { personajes: Personaje[] }) {
     return (
       <div
         key={personaje.id}
-        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-700"
+        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-700 [clip-path:inset(0_0_-6rem_0)]"
         style={{ opacity: saliendo ? 0 : 1 }}
       >
-        <VideoPersonaje url={personaje.url} onEnded={() => avanzarVideo.current()} />
+        <VideoPersonaje url={personaje.url} sensibilidad={sensibilidadDeUrl(personaje.url)} onEnded={() => avanzarVideo.current()} />
       </div>
     );
   }

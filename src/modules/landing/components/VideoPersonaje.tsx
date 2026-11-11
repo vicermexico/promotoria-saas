@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2 } from "lucide-react";
-import { aplicarChroma, SENSIBILIDAD_VIDEO } from "../chromaKey";
+import { aplicarChroma } from "../chromaKey";
 
 type ConCuadros = HTMLVideoElement & {
   requestVideoFrameCallback?: (cb: () => void) => number;
@@ -16,16 +16,20 @@ const MAX_ANCHO = 960; // se procesa a este ancho como máximo para que corra fl
 export function VideoPersonaje({
   url,
   modo = "portada",
+  sensibilidad,
   onEnded,
 }: {
   url: string;
   modo?: "portada" | "vista";
+  sensibilidad: number; // 0 = no quitar el verde
   onEnded?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finRef = useRef(onEnded);
   finRef.current = onEnded;
+  const sensRef = useRef(sensibilidad);
+  sensRef.current = sensibilidad; // se puede mover en vivo sin reiniciar el video
   const [aspecto, setAspecto] = useState(16 / 9);
   const [sinSonido, setSinSonido] = useState(false);
 
@@ -57,8 +61,10 @@ export function VideoPersonaje({
         ctx.drawImage(v, 0, 0, w, h);
         try {
           const img = ctx.getImageData(0, 0, w, h);
-          aplicarChroma(img.data, SENSIBILIDAD_VIDEO);
-          ctx.putImageData(img, 0, 0);
+          if (sensRef.current > 0) {
+            aplicarChroma(img.data, sensRef.current);
+            ctx.putImageData(img, 0, 0);
+          }
         } catch {
           // sin permiso para leer los cuadros (CORS): se queda el cuadro tal cual
         }
@@ -134,12 +140,13 @@ export function VideoPersonaje({
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 flex justify-center overflow-hidden [--h-video:min(46dvh,calc(max(85dvh,40rem)_-_22rem))] sm:[--h-video:min(46dvh,calc(max(85dvh,28rem)_-_15rem))] lg:[--h-video:72dvh]">
+    // Mismo alto y misma altura que los personajes en foto: pegado abajo y asomando un poco hacia lo blanco
+    <div className="absolute inset-x-0 -bottom-9 flex justify-center overflow-hidden lg:-bottom-14 [--h-video:min(46dvh,calc(max(85dvh,40rem)_-_22rem))] sm:[--h-video:min(46dvh,calc(max(85dvh,28rem)_-_15rem))] lg:[--h-video:72dvh]">
       {video}
       <canvas
         ref={canvasRef}
         className="max-w-none shrink-0"
-        style={{ aspectRatio: aspecto, height: `min(85dvh, max(var(--h-video), calc(100vw / ${aspecto})))` }}
+        style={{ aspectRatio: aspecto, height: "var(--h-video)" }}
         role="img"
         aria-label="Personaje"
       />
@@ -147,7 +154,7 @@ export function VideoPersonaje({
         <button
           type="button"
           onClick={activarSonido}
-          className="pointer-events-auto absolute bottom-3 right-3 z-20 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-black/75"
+          className="pointer-events-auto absolute bottom-12 right-3 z-20 lg:bottom-16 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-black/75"
         >
           <Volume2 className="h-4 w-4" aria-hidden="true" />
           Activar sonido

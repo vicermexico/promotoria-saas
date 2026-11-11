@@ -6,6 +6,7 @@ import { addPersonaje, updatePersonaje, deletePersonaje, reordenarPortada } from
 import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, ConfirmModal, Input, Label } from "@/components"
 import { esVideoPersonaje, type Personaje } from "@/modules/landing/tipos"
 import { VideoPersonaje } from "@/modules/landing/components/VideoPersonaje"
+import { nombreArchivoVideo } from "@/modules/landing/chromaKey"
 import { cargarImagen, dibujarRecorte, canvasAPng } from "./quitarFondo"
 
 const MAX_MB_VIDEO = 50
@@ -50,6 +51,7 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
       if (file.size > MAX_MB_VIDEO * 1024 * 1024) return toast.error(`El video no debe superar los ${MAX_MB_VIDEO}MB`)
       soltarVideo()
       setImg(null)
+      setQuitarVerde(true)
       setVideo({ file, url: URL.createObjectURL(file) })
       return
     }
@@ -70,7 +72,13 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
     try {
       let blob: Blob | undefined
       let nombreArchivo = "personaje.png"
-      if (video) { blob = video.file; nombreArchivo = video.file.name }
+      if (video) {
+        blob = video.file
+        // la fuerza del recorte viaja en el nombre del archivo (0 = dejar el verde)
+        const ext = ({ "video/webm": "webm", "video/quicktime": "mov", "video/mp4": "mp4" } as Record<string, string>)[video.file.type]
+          ?? (video.file.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "")
+        nombreArchivo = nombreArchivoVideo(ext, quitarVerde ? sensibilidad : 0)
+      }
       else if (img && canvasRef.current) blob = await canvasAPng(canvasRef.current)
       if (editando) {
         await updatePersonaje(editando.id, { nombre: nombre.trim(), puesto: puesto.trim() }, blob, nombreArchivo)
@@ -138,11 +146,11 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
                 </Button>
                 {video && (
                   <p className="text-xs text-muted-foreground">
-                    Video con fondo verde: el verde se quita solo al reproducirlo en la portada (aquí ves cómo queda).
-                    Sale de lado a lado, pegado abajo. Usa un verde parejo y que la persona no lleve verde.
+                    Video: el verde se quita al reproducirlo en la portada, con el mismo tamaño y lugar que los personajes.
+                    Que la persona llegue hasta abajo del cuadro, con verde parejo y sin ropa verde.
                   </p>
                 )}
-                {img && (
+                {(img || video) && (
                   <>
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" checked={quitarVerde} onChange={(e) => setQuitarVerde(e.target.checked)} />
@@ -169,7 +177,7 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
 
               <div className="rounded-lg border overflow-hidden flex items-center justify-center min-h-48" style={{ background: DAMERO }}>
                 {video ? (
-                  <VideoPersonaje key={video.url} url={video.url} modo="vista" />
+                  <VideoPersonaje key={video.url} url={video.url} modo="vista" sensibilidad={quitarVerde ? sensibilidad : 0} />
                 ) : img ? (
                   <canvas ref={canvasRef} className="max-h-80 max-w-full object-contain" />
                 ) : editando ? (
