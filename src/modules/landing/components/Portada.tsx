@@ -170,7 +170,7 @@ function FotoPersonaje({ personaje, lado }: { personaje: Personaje; lado: "izq" 
       data-personaje-foto
       role="img"
       aria-label={personaje.nombre ?? ""}
-      className={`personaje-${lado} relative shrink-0 h-[min(calc(min(46dvh,calc(max(85dvh,28rem)_-_15rem))*var(--f)),calc(52vw/var(--r)))] lg:h-[min(calc(72dvh*var(--f)),calc(30vw/var(--r)))]`}
+      className={`personaje-${lado} relative shrink-0 h-[min(calc(min(46dvh,calc(max(85dvh,40rem)_-_22rem))*var(--f)),calc(52vw/var(--r)))] sm:h-[min(calc(min(46dvh,calc(max(85dvh,28rem)_-_15rem))*var(--f)),calc(52vw/var(--r)))] lg:h-[min(calc(72dvh*var(--f)),calc(30vw/var(--r)))]`}
       style={{ aspectRatio: r, "--r": r, "--f": factor } as CSSProperties}
     >
       <img
@@ -281,7 +281,7 @@ export function Portada({
   }, []);
 
   return (
-    <section className="relative z-10 h-[85dvh] min-h-[28rem] overflow-x-clip bg-sidebar text-white">
+    <section className="relative z-10 h-[85dvh] min-h-[40rem] overflow-x-clip sm:min-h-[28rem] bg-sidebar text-white">
       {/* El recorte del fondo va en su propia caja; la sección no recorta hacia abajo para que el personaje se asome */}
       <div className="absolute inset-0 overflow-hidden">
         {fondos.length === 0 && <div className="absolute inset-0 bg-dotgrid" aria-hidden="true" />}
@@ -295,7 +295,7 @@ export function Portada({
 
       {/* Tarjeta de entrar: arriba a la derecha; nada más se pone ahí */}
       <div
-        className={`fixed inset-x-3 top-3 z-30 transition-opacity duration-1000 sm:inset-x-auto sm:right-5 sm:top-5 sm:w-80 ${
+        className={`absolute inset-x-3 top-3 z-30 transition-opacity duration-1000 sm:fixed sm:inset-x-auto sm:right-5 sm:top-5 sm:w-80 ${
           tarjeta ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden={!tarjeta}
@@ -305,7 +305,7 @@ export function Portada({
       </div>
 
       {/* Logo y nombre de la marca: lejos de la tarjeta */}
-      <div className="absolute left-1/2 top-[9.5rem] z-20 flex w-full -translate-x-1/2 flex-col items-center gap-3 px-4 lg:bottom-[5dvh] lg:top-auto">
+      <div className="absolute left-1/2 top-[15rem] z-20 sm:top-[9.5rem] flex w-full -translate-x-1/2 flex-col items-center gap-3 px-4 lg:bottom-[5dvh] lg:top-auto">
         <img src={logoBlanco} alt="Promotoria Digital" className="h-10 w-auto lg:h-14" />
         {encabezado}
       </div>

@@ -22,15 +22,15 @@ export function TarjetaLogin() {
         <LogIn className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
         Iniciar sesión
       </h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-3 sm:p-4">
+      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-x-2 gap-y-2 p-3 sm:grid-cols-1 sm:gap-3 sm:p-4">
         <div>
-          <label htmlFor="tarjeta-phone" className="mb-1.5 block text-sm font-medium text-foreground">
+          <label htmlFor="tarjeta-phone" className="mb-1 block text-xs font-medium text-foreground sm:mb-1.5 sm:text-sm">
             Celular
           </label>
           <Input
             id="tarjeta-phone"
             type="tel"
-            placeholder="Tu número a 10 dígitos"
+            placeholder="10 dígitos"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             autoComplete="tel"
@@ -38,24 +38,24 @@ export function TarjetaLogin() {
           />
         </div>
         <div>
-          <label htmlFor="tarjeta-password" className="mb-1.5 block text-sm font-medium text-foreground">
+          <label htmlFor="tarjeta-password" className="mb-1 block text-xs font-medium text-foreground sm:mb-1.5 sm:text-sm">
             Contraseña
           </label>
           <Input
             id="tarjeta-password"
             type="password"
-            placeholder="Ingresa tu contraseña"
+            placeholder="Tu contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             className="w-full"
           />
         </div>
-        <Button type="submit" variant="brand" size="lg" className="w-full" disabled={loading || !phone || !password}>
+        <Button type="submit" variant="brand" size="lg" className="col-span-2 w-full sm:col-span-1" disabled={loading || !phone || !password}>
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Entrar
         </Button>
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="col-span-2 text-center text-xs text-muted-foreground sm:col-span-1">
           <Link to="/restore-pwd" className="font-medium text-foreground hover:underline">
             ¿Olvidaste tu contraseña?
           </Link>
