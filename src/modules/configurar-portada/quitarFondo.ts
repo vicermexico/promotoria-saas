@@ -1,6 +1,8 @@
 // Recorte de fondo verde (chroma key) en el navegador, sin servicios externos.
 // Devuelve un PNG con transparencia. `sensibilidad` va de 10 a 120 (más alto = quita más verde).
 
+import { aplicarChroma } from "@/modules/landing/chromaKey"
+
 const MAX_LADO = 1400
 
 export async function cargarImagen(file: Blob): Promise<HTMLImageElement> {
@@ -29,19 +31,7 @@ export function dibujarRecorte(img: HTMLImageElement, canvas: HTMLCanvasElement,
   if (!quitarVerde) return
 
   const data = ctx.getImageData(0, 0, w, h)
-  const px = data.data
-  const alto = sensibilidad
-  const bajo = sensibilidad * 0.35
-  for (let i = 0; i < px.length; i += 4) {
-    const r = px[i], g = px[i + 1], b = px[i + 2]
-    const dominancia = g - Math.max(r, b) // cuánto más verde que rojo/azul
-    if (dominancia <= bajo) continue
-    if (dominancia >= alto) { px[i + 3] = 0; continue }
-    // borde: transparencia parcial y se le quita el tinte verde
-    const t = (dominancia - bajo) / (alto - bajo)
-    px[i + 3] = Math.round(px[i + 3] * (1 - t))
-    px[i + 1] = Math.max(r, b)
-  }
+  aplicarChroma(data.data, sensibilidad)
   ctx.putImageData(data, 0, 0)
 }
 

@@ -22,10 +22,11 @@ export const addFondo = (archivo: File) => api.upload<ApiResponse<Fondo>>(`/inic
 export const deleteFondo = (id: number) => api.delete<ApiResponse<unknown>>(`/inicio/fondos/${id}`);
 
 // Personajes (el archivo es el PNG ya recortado)
-export const addPersonaje = (archivo: Blob, nombre: string, puesto: string) =>
-  api.upload<ApiResponse<Personaje>>(`/inicio/personajes`, fd(archivo, { nombre, puesto }, "personaje.png"));
-export const updatePersonaje = (id: number, campos: { nombre: string; puesto: string }, archivo?: Blob) =>
-  api.uploadPut<ApiResponse<Personaje>>(`/inicio/personajes/${id}`, fd(archivo, campos, "personaje.png"));
+// (o un video con fondo verde: entonces se manda tal cual, con su nombre real de archivo)
+export const addPersonaje = (archivo: Blob, nombre: string, puesto: string, nombreArchivo = "personaje.png") =>
+  api.upload<ApiResponse<Personaje>>(`/inicio/personajes`, fd(archivo, { nombre, puesto }, nombreArchivo));
+export const updatePersonaje = (id: number, campos: { nombre: string; puesto: string }, archivo?: Blob, nombreArchivo = "personaje.png") =>
+  api.uploadPut<ApiResponse<Personaje>>(`/inicio/personajes/${id}`, fd(archivo, campos, nombreArchivo));
 export const deletePersonaje = (id: number) => api.delete<ApiResponse<unknown>>(`/inicio/personajes/${id}`);
 
 // Clientes

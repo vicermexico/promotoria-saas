@@ -7,8 +7,13 @@ export type Personaje = {
   id: number;
   nombre: string | null;
   puesto: string | null;
+  // "video": grabado con fondo verde; el navegador le quita el verde al reproducirlo.
+  tipo?: "imagen" | "video";
   url: string;
 };
+
+export const esVideoPersonaje = (p: Personaje) =>
+  p.tipo === "video" || /\.(mp4|webm|mov|m4v)$/i.test(p.url.split("?")[0]);
 
 export type Cliente = {
   id: number;

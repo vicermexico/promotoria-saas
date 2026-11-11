@@ -4,9 +4,11 @@ import { Loader2, UploadCloud, Trash2, ArrowUp, ArrowDown, Pencil, X, Save } fro
 
 import { addPersonaje, updatePersonaje, deletePersonaje, reordenarPortada } from "@/Fetch/portada"
 import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, ConfirmModal, Input, Label } from "@/components"
-import type { Personaje } from "@/modules/landing/tipos"
+import { esVideoPersonaje, type Personaje } from "@/modules/landing/tipos"
+import { VideoPersonaje } from "@/modules/landing/components/VideoPersonaje"
 import { cargarImagen, dibujarRecorte, canvasAPng } from "./quitarFondo"
 
+const MAX_MB_VIDEO = 50
 const DAMERO = "repeating-conic-gradient(#d4d4d8 0% 25%, #f4f4f5 0% 50%) 50% / 16px 16px"
 
 export default function SeccionPersonajes({ personajes, onChanged }: { personajes: Personaje[]; onChanged: () => void }) {
@@ -15,6 +17,7 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
   const [editando, setEditando] = useState<Personaje | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [img, setImg] = useState<HTMLImageElement | null>(null)
+  const [video, setVideo] = useState<{ file: File; url: string } | null>(null)
   const [quitarVerde, setQuitarVerde] = useState(true)
   const [sensibilidad, setSensibilidad] = useState(60)
   const [nombre, setNombre] = useState("")
@@ -28,7 +31,9 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
     if (img && canvasRef.current) dibujarRecorte(img, canvasRef.current, quitarVerde, sensibilidad)
   }, [img, quitarVerde, sensibilidad, abierto])
 
+  const soltarVideo = () => setVideo((v) => { if (v) URL.revokeObjectURL(v.url); return null })
   const cerrar = () => {
+    soltarVideo()
     setAbierto(false); setEditando(null); setImg(null)
     setNombre(""); setPuesto(""); setQuitarVerde(true); setSensibilidad(60)
   }
@@ -41,8 +46,16 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
-    if (!file.type.startsWith("image/")) return toast.error("El archivo debe ser una imagen")
+    if (file.type.startsWith("video/")) {
+      if (file.size > MAX_MB_VIDEO * 1024 * 1024) return toast.error(`El video no debe superar los ${MAX_MB_VIDEO}MB`)
+      soltarVideo()
+      setImg(null)
+      setVideo({ file, url: URL.createObjectURL(file) })
+      return
+    }
+    if (!file.type.startsWith("image/")) return toast.error("El archivo debe ser una foto o un video")
     try {
+      soltarVideo()
       setImg(await cargarImagen(file))
       // un PNG que ya trae transparencia no necesita recorte
       setQuitarVerde(file.type !== "image/png")
@@ -52,16 +65,18 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
   }
 
   const guardar = async () => {
-    if (!editando && !img) return toast.error("Elige una foto")
+    if (!editando && !img && !video) return toast.error("Elige una foto o un video")
     setGuardando(true)
     try {
       let blob: Blob | undefined
-      if (img && canvasRef.current) blob = await canvasAPng(canvasRef.current)
+      let nombreArchivo = "personaje.png"
+      if (video) { blob = video.file; nombreArchivo = video.file.name }
+      else if (img && canvasRef.current) blob = await canvasAPng(canvasRef.current)
       if (editando) {
-        await updatePersonaje(editando.id, { nombre: nombre.trim(), puesto: puesto.trim() }, blob)
+        await updatePersonaje(editando.id, { nombre: nombre.trim(), puesto: puesto.trim() }, blob, nombreArchivo)
         toast.success("Personaje actualizado exitosamente")
       } else {
-        await addPersonaje(blob!, nombre.trim(), puesto.trim())
+        await addPersonaje(blob!, nombre.trim(), puesto.trim(), nombreArchivo)
         toast.success("Personaje agregado exitosamente")
       }
       cerrar()
@@ -100,7 +115,7 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
     <Card className="mt-4">
       <CardHeader>
         <CardTitle>Personajes</CardTitle>
-        <CardDescription>Las personas que aparecen junto al login. Sube una foto con fondo verde y el panel lo recorta solo.</CardDescription>
+        <CardDescription>Las personas que aparecen junto al login. Sube una foto o un video con fondo verde y el panel quita el verde solo.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {!abierto && (
@@ -114,13 +129,19 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
               <Button size="icon" variant="ghost" onClick={cerrar} aria-label="Cerrar"><X className="w-4 h-4" /></Button>
             </div>
 
-            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={elegirFoto} />
+            <input ref={inputRef} type="file" accept="image/*,video/*" className="hidden" onChange={elegirFoto} />
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-3">
                 <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
-                  <UploadCloud className="w-4 h-4 mr-2" />{img || editando ? "Cambiar foto" : "Elegir foto"}
+                  <UploadCloud className="w-4 h-4 mr-2" />{img || video || editando ? "Cambiar archivo" : "Elegir foto o video"}
                 </Button>
+                {video && (
+                  <p className="text-xs text-muted-foreground">
+                    Video con fondo verde: el verde se quita solo al reproducirlo en la portada (aquí ves cómo queda).
+                    Sale de lado a lado, pegado abajo. Usa un verde parejo y que la persona no lleve verde.
+                  </p>
+                )}
                 {img && (
                   <>
                     <label className="flex items-center gap-2 text-sm">
@@ -147,10 +168,14 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
               </div>
 
               <div className="rounded-lg border overflow-hidden flex items-center justify-center min-h-48" style={{ background: DAMERO }}>
-                {img ? (
+                {video ? (
+                  <VideoPersonaje key={video.url} url={video.url} modo="vista" />
+                ) : img ? (
                   <canvas ref={canvasRef} className="max-h-80 max-w-full object-contain" />
                 ) : editando ? (
-                  <img src={editando.url} alt="" className="max-h-80 object-contain" />
+                  esVideoPersonaje(editando)
+                    ? <video src={editando.url} className="max-h-80" muted loop autoPlay playsInline />
+                    : <img src={editando.url} alt="" className="max-h-80 object-contain" />
                 ) : (
                   <span className="text-sm text-muted-foreground p-6 text-center">Aquí verás cómo queda el recorte</span>
                 )}
@@ -173,11 +198,13 @@ export default function SeccionPersonajes({ personajes, onChanged }: { personaje
             {personajes.map((p, i) => (
               <div key={p.id} className="rounded-lg border overflow-hidden bg-card">
                 <div className="aspect-[4/5] flex items-end justify-center" style={{ background: DAMERO }}>
-                  <img src={p.url} alt={p.nombre ?? ""} className="max-h-full object-contain" />
+                  {esVideoPersonaje(p)
+                    ? <video src={p.url} className="max-h-full max-w-full object-contain" muted loop autoPlay playsInline />
+                    : <img src={p.url} alt={p.nombre ?? ""} className="max-h-full object-contain" />}
                 </div>
                 <div className="p-2 space-y-1">
                   <div className="text-sm font-medium truncate">{p.nombre || "Sin nombre"}</div>
-                  <div className="text-xs text-muted-foreground truncate">{p.puesto || "Sin puesto"}</div>
+                  <div className="text-xs text-muted-foreground truncate">{esVideoPersonaje(p) ? "Video con fondo verde" : (p.puesto || "Sin puesto")}</div>
                   <div className="flex justify-end gap-1">
                     <Button size="icon" variant="ghost" disabled={moviendo || i === 0} onClick={() => mover(i, -1)} aria-label="Subir"><ArrowUp className="w-4 h-4" /></Button>
                     <Button size="icon" variant="ghost" disabled={moviendo || i === personajes.length - 1} onClick={() => mover(i, 1)} aria-label="Bajar"><ArrowDown className="w-4 h-4" /></Button>

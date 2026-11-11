@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import type { Fondo, Personaje } from "../tipos";
+import { esVideoPersonaje, type Fondo, type Personaje } from "../tipos";
+import { VideoPersonaje } from "./VideoPersonaje";
 import logoBlanco from "@/assets/promotorialogotipo_principalblanco.png";
 
 // La portada, en este orden: sale el fondo → entra el personaje → aparece su PUESTO en grande
@@ -191,22 +192,33 @@ function Personajes({ personajes }: { personajes: Personaje[] }) {
   const total = personajes.length;
   const [indice, setIndice] = useState(-1); // -1: todavía no entra ninguno
   const [saliendo, setSaliendo] = useState(false);
+  const [fin, setFin] = useState(false);
+  // Un video avisa cuando termina; esto lo retira y pasa al siguiente
+  const avanzarVideo = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     if (total === 0) return;
     const relojes: ReturnType<typeof setTimeout>[] = [];
 
+    function retirar(i: number) {
+      setSaliendo(true);
+      relojes.push(
+        setTimeout(() => {
+          if (i < total - 1) mostrar(i + 1);
+          else setFin(true); // un video al final se va; una foto al final se queda fija
+        }, TARDA_EN_SALIR),
+      );
+    }
+
     function mostrar(i: number) {
       setIndice(i);
       setSaliendo(false);
-      // el último se queda fijo: no se programa nada más
-      if (i < total - 1) {
-        relojes.push(
-          setTimeout(() => {
-            setSaliendo(true);
-            relojes.push(setTimeout(() => mostrar(i + 1), TARDA_EN_SALIR));
-          }, SE_QUEDA),
-        );
+      setFin(false);
+      if (esVideoPersonaje(personajes[i])) {
+        avanzarVideo.current = () => retirar(i);
+      } else if (i < total - 1) {
+        // la foto se queda un rato y se retira; la última se queda fija
+        relojes.push(setTimeout(() => retirar(i), SE_QUEDA));
       }
     }
 
@@ -215,7 +227,21 @@ function Personajes({ personajes }: { personajes: Personaje[] }) {
   }, [total]);
 
   const personaje = personajes[indice];
-  if (!personaje) return null;
+  if (!personaje || fin) return null;
+
+  // Video con fondo verde: ocupa de lado a lado y se desvanece al terminar
+  if (esVideoPersonaje(personaje)) {
+    return (
+      <div
+        key={personaje.id}
+        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-700"
+        style={{ opacity: saliendo ? 0 : 1 }}
+      >
+        <VideoPersonaje url={personaje.url} onEnded={() => avanzarVideo.current()} />
+      </div>
+    );
+  }
+
   // El primero entra por la izquierda, el segundo por la derecha, y así
   const izquierda = indice % 2 === 0;
   const lado = izquierda ? "izq" : "der";
