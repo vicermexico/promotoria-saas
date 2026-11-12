@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { CheckCircle2, ChevronDown, Clock, Copy, Landmark, Loader2, RefreshCw, Share2, UserPlus, Users } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Clock, Copy, Landmark, Loader2, MessageCircle, RefreshCw, Share2, UserPlus, Users } from 'lucide-react'
 
 import { driverApi, ApiResponse } from '@/lib/driverApi'
 import { useDriverAuthStore } from '@/stores/driverAuthStore'
@@ -70,6 +70,14 @@ interface BankAccount {
   card_number: string | null
 }
 
+// Deja el número listo para wa.me: solo dígitos y con lada de México (52). Devuelve null si no sirve.
+const numeroWhatsApp = (texto: string): string | null => {
+  let d = texto.replace(/\D/g, '')
+  if (d.startsWith('521') && d.length === 13) d = '52' + d.slice(3)
+  if (d.length === 10) d = '52' + d
+  return /^52\d{10}$/.test(d) ? d : null
+}
+
 const fecha = (iso?: string | null) => {
   if (!iso) return ''
   const [y, m, d] = iso.slice(0, 10).split('-')
@@ -88,6 +96,8 @@ export default function Invitar() {
   const [bank, setBank] = useState<BankAccount | null>(null)
   const [openPayment, setOpenPayment] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [plantilla, setPlantilla] = useState(MENSAJE_BASE)
+  const [telefono, setTelefono] = useState('')
   const [saving, setSaving] = useState(false)
   const [fotoRota, setFotoRota] = useState(false)
   const [form, setForm] = useState({ type: 'CLABE' as 'CLABE' | 'CARD', holder: '', bank: '', number: '' })
@@ -118,6 +128,31 @@ export default function Invitar() {
     cargar()
   }, [cargar])
 
+  // El mensaje se baja al abrir la pantalla para que, al tocar "Enviar", WhatsApp abra al instante
+  useEffect(() => {
+    driverApi
+      .get<ApiResponse<{ value?: string }>>('/app-config/referral-share-message')
+      .then((res) => {
+        if (res.data?.value) setPlantilla(res.data.value)
+      })
+      .catch(() => undefined)
+  }, [])
+
+  const textoInvitacion = (codigo: string) => {
+    const link = `${REGISTRO_URL}?ref=${encodeURIComponent(codigo)}`
+    return plantilla.includes('{link}') ? plantilla.replace('{link}', link) : `${plantilla}\n${link}`
+  }
+
+  const enviarPorWhatsApp = () => {
+    if (!aff) return
+    const numero = numeroWhatsApp(telefono)
+    if (!numero) {
+      toast.error('Escribe el WhatsApp a 10 dígitos')
+      return
+    }
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(textoInvitacion(aff.code))}`, '_blank')
+  }
+
   const copiar = async () => {
     if (!aff) return
     try {
@@ -130,15 +165,7 @@ export default function Invitar() {
 
   const compartir = async () => {
     if (!aff) return
-    let plantilla = MENSAJE_BASE
-    try {
-      const res = await driverApi.get<ApiResponse<{ value?: string }>>('/app-config/referral-share-message')
-      if (res.data?.value) plantilla = res.data.value
-    } catch {
-      // se usa el mensaje base
-    }
-    const link = `${REGISTRO_URL}?ref=${encodeURIComponent(aff.code)}`
-    const texto = plantilla.includes('{link}') ? plantilla.replace('{link}', link) : `${plantilla}\n${link}`
+    const texto = textoInvitacion(aff.code)
     try {
       if (navigator.share) {
         await navigator.share({ text: texto })
@@ -234,14 +261,41 @@ export default function Invitar() {
               <Copy size={30} />
             </button>
           </div>
+          <div className="mt-5">
+            <label className="font-semibold" htmlFor="wa-invitado" style={{ fontSize: 15, color: '#A9BDC5' }}>
+              WhatsApp de tu invitado
+            </label>
+            <input
+              id="wa-invitado"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="10 dígitos"
+              value={telefono}
+              maxLength={16}
+              onChange={(e) => setTelefono(e.target.value.replace(/[^\d\s+()-]/g, ''))}
+              onKeyDown={(e) => e.key === 'Enter' && enviarPorWhatsApp()}
+              className="mt-2 w-full bg-white"
+              style={{ height: 56, borderRadius: 16, padding: '0 16px', fontSize: 20, color: C.text, border: 'none' }}
+            />
+            <button
+              type="button"
+              onClick={enviarPorWhatsApp}
+              disabled={!aff}
+              className="mt-3 flex w-full items-center justify-center gap-3 font-bold text-white active:opacity-80"
+              style={{ height: 62, borderRadius: 18, fontSize: 21, background: '#25D366', opacity: aff ? 1 : 0.6 }}
+            >
+              <MessageCircle size={24} /> Enviar por WhatsApp
+            </button>
+          </div>
           <button
             type="button"
             onClick={compartir}
             disabled={!aff}
-            className="mt-5 flex w-full items-center justify-center gap-3 bg-white font-bold active:opacity-80"
+            className="mt-3 flex w-full items-center justify-center gap-3 bg-white font-bold active:opacity-80"
             style={{ height: 62, borderRadius: 18, fontSize: 21, color: C.teal, opacity: aff ? 1 : 0.6 }}
           >
-            <Share2 size={24} /> Compartir invitación
+            <Share2 size={24} /> Compartir con otras apps
           </button>
         </div>
 
